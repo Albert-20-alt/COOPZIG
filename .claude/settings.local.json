@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -l \"site_config\\\\|site_name\" /Users/albert/Desktop/cooperative/supabase/migrations/*.sql)",
+      "Bash(npx tsc:*)",
+      "Bash(grep -r \"DialogTrigger\\\\|Dialog>\\\\|DialogContent\" /Users/albert/Desktop/cooperative/src/pages/*.tsx -c)"
+    ]
+  }
+}

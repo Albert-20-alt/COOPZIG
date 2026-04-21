@@ -1,0 +1,42 @@
+name: Hostinger Automatique 🚀
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  web-deploy:
+    name: 🎉 Déploiement sur Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Récupération du code (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 📦 Installation de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🔨 Installation et Compilation (Build)
+        run: |
+          npm install
+          npm run build
+        env:
+          # Si le build a besoin des variables Supabase, injectez-les ici (sans que ce soit un secret sensible si public)
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: 📂 Synchronisation FTP sur Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: /public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**

@@ -1,0 +1,466 @@
+{
+  "landing": {
+    "hero_title": "AgriCoop Casamance",
+    "hero_subtitle": "Regional Cooperative of Planters and Farmers",
+    "hero_description": "Discover the excellence of fruit production from Senegal. We join forces to offer superior quality fruits, cultivated with respect for nature, to national and international markets.",
+    "cta_order": "Order our products",
+    "cta_learn_more": "Discover the cooperative",
+    "products": {
+      "badge": "Specimen of Excellence",
+      "title": "Products of Casamance",
+      "subtitle": "Exceptional tropical fruits, grown with respect for the environment.",
+      "full_catalog": "Full Catalog",
+      "premium_harvest": "Premium Harvest",
+      "fallback_desc": "Excellence cultivated in our orchards in Casamance.",
+      "quality": "Quality",
+      "origin": "Origin",
+      "window": "Window",
+      "volume": "Volume",
+      "in_progress": "In progress",
+      "order": "Order"
+    },
+    "calendar": {
+      "badge": "Seasonality",
+      "title": "Availability Calendar",
+      "subtitle": "Plan your purchases according to the harvest periods of each crop.",
+      "high": "Peak season",
+      "medium": "Available",
+      "low": "Out of season",
+      "table_title": "Production Calendar",
+      "product": "Product",
+      "jan": "Jan",
+      "fev": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec",
+      "avr": "Apr",
+      "mai": "May",
+      "products": {
+        "Agrumes": "Citrus",
+        "Anacarde": "Cashew",
+        "Ditakh": "Ditakh",
+        "Huile de Palme": "Palm Oil",
+        "Mangue Bouko.": "Bouko. Mango",
+        "Mangue Diorou": "Diorou Mango",
+        "Mangue Keitt": "Keitt Mango",
+        "Mangue Kent": "Kent Mango",
+        "Mangue pommes": "Apple Mango",
+        "Miel": "Honey",
+        "Papaye": "Papaya"
+      }
+    },
+    "coop": {
+      "badge": "Our Cooperative",
+      "title": "A structured organization for concrete results",
+      "subtitle": "The Cooperative of Farmers & Orchard Planters of Casamance brings together producers committed to a quality, traceability, and collective sales approach.",
+      "exp_years": "+15 years",
+      "exp_text": "of experience in collective farming",
+      "features": {
+        "prods_title": "1 Producers",
+        "prods_desc": "Distributed across 4 zones in Casamance",
+        "trace_title": "Traceability",
+        "trace_desc": "Every batch is tracked from plot to buyer",
+        "qual_title": "Export Quality",
+        "qual_desc": "International standards respected",
+        "log_title": "Logistics",
+        "log_desc": "Shared collection and transport",
+        "mark_title": "Markets",
+        "mark_desc": "Local, national, and export sales",
+        "eco_title": "Agroecology",
+        "eco_desc": "Sustainable practices and organic certifications"
+      }
+    },
+    "order": {
+      "badge": "Place an Order",
+      "title": "Interested in our products?",
+      "subtitle": "Fill out this form and our sales team will contact you within 48 hours with a customized offer.",
+      "min_qty": "Minimum quantity",
+      "min_qty_desc": "From 1 ton",
+      "contact": "Direct contact",
+      "contact_desc": "+221 33 XXX XX XX",
+      "response": "Guaranteed response",
+      "response_desc": "Within 48 business hours",
+      "form_name": "Full name *",
+      "form_company": "Company",
+      "form_email": "Email *",
+      "form_phone": "Phone *",
+      "form_loc": "Location",
+      "form_product": "Product *",
+      "form_qty": "Quantity (tons) *",
+      "form_msg": "Message",
+      "form_submit": "Send my Request",
+      "form_loading": "Sending...",
+      "product_options_mangue_kent": "Kent Mango",
+      "product_options_anacarde": "Cashew Nut",
+      "product_options_agrumes": "Citrus",
+      "product_options_banane": "Banana",
+      "product_options_mangue_sechee": "Dried Mango",
+      "product_options_ditakh": "Ditakh",
+      "product_options_autre": "Other",
+      "select": "Select",
+      "error_fields": "Please fill all required fields",
+      "error_send": "Error sending. Please try again.",
+      "success": "Your request has been sent successfully!",
+      "success_title": "Request sent successfully!",
+      "success_desc": "Thank you for your interest. Our team has received your request and will contact you within 48 business hours.",
+      "success_close": "New request"
+    },
+    "footer": {
+      "cta_badge": "Agricultural Excellence of Ziguinchor",
+      "cta_title": "Ready to transform agriculture with us?",
+      "cta_btn1": "Place an order",
+      "cta_btn2": "Become a member",
+      "badge1": "Quality Certified",
+      "badge2": "Organic Casamance",
+      "badge3": "Direct Export",
+      "navigation": "Navigation",
+      "nav_shop": "Shop",
+      "nav_harvest": "Harvest",
+      "nav_markets": "Markets",
+      "nav_projects": "Projects",
+      "nav_news": "News",
+      "contact": "Contact Us",
+      "newsletter": "Newsletter",
+      "newsletter_desc": "Sign up to receive the latest updates on our harvests and prices.",
+      "email_placeholder": "Your email",
+      "member_area": "Member Area",
+      "quote_request": "Quote Request",
+      "rights": "All rights reserved.",
+      "pulse": "Pulse of Casamance Agriculture",
+      "nav_about": "About Us",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "support": "Support",
+      "newsletter_success": "Thank you! You are subscribed to our newsletter.",
+      "newsletter_duplicate": "You are already subscribed to our newsletter.",
+      "newsletter_error": "An error occurred. Please try again."
+    },
+    "hero": {
+      "badge_location": "Casamance, Senegal",
+      "scroll": "Scroll",
+      "vertical_label": "CRPAZ — Ziguinchor Cooperative",
+      "badge": "New Campaign 2025",
+      "raw_title": "Agricultural Fruits of Casamance | The Excellence of our Terroirs | Export Quality from Senegal",
+      "subtitle": "Fruits grown with care by our local producers, harvested at maturity, and delivered directly to buyers at the right price."
+    },
+    "stats": {
+      "producers": "Member Producers",
+      "producers_short": "Producers",
+      "hectares": "Cultivated Hectares",
+      "hectares_short": "Hectares",
+      "tons": "Tons / year",
+      "tons_short": "Tons/year",
+      "commercialization": "Commercialization Rate",
+      "commercialization_short": "Sales",
+      "zones": "Production Zones",
+      "zones_short": "Zones",
+      "varieties": "Certified Varieties",
+      "varieties_short": "Varieties"
+    },
+    "blog": {
+      "title": "Latest News",
+      "view_all": "View all articles",
+      "initiatives": "OUR INITIATIVES",
+      "journal": "Journal"
+    },
+    "projects": {
+      "title": "Ongoing Projects",
+      "view_all": "View all projects",
+      "status": {
+        "en_cours": "In Progress",
+        "termine": "Completed",
+        "planifie": "Planned"
+      },
+      "metrics": {
+        "period": "Period",
+        "budget": "Budget",
+        "beneficiaries": "Beneficiaries"
+      }
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Our Products",
+    "harvests": "Calendar",
+    "markets": "Market Prices",
+    "projects": "Projects",
+    "news": "News",
+    "cooperative": "The Cooperative",
+    "about": "About Us",
+    "contact": "Contact",
+    "login": "Login",
+    "order": "Order",
+    "dashboard": "Dashboard"
+  },
+  "markets": {
+    "hero": {
+      "title": "Real-time Agricultural Price Transparency",
+      "subtitle": "Direct selling prices offered by the cooperative, updated daily to guarantee the best quality at the best price.",
+      "badge": "Market & Rates",
+      "download": "Download catalog",
+      "order": "Place an order"
+    },
+    "stats": {
+      "certified": "Certified Speculations",
+      "savings": "Average Savings",
+      "stock": "Available Stock",
+      "zones": "Coverage Zones"
+    },
+    "trust": {
+      "guaranteed": "Guaranteed prices for producers",
+      "sustainable": "Certified sustainable agriculture",
+      "verified": "Verified markets (ARM)",
+      "traceability": "Traceability and quality"
+    },
+    "catalog": {
+      "eyebrow": "Catalog",
+      "title": "Our Available Products",
+      "desc": "Exclusive prices offered by the cooperative, directly from the warehouse.",
+      "coop_price": "Cooperative Price",
+      "market_price": "Local Market",
+      "season": "Season",
+      "stock": "Available Stock",
+      "certification": "Certification",
+      "trend": {
+        "hausse": "Rise",
+        "baisse": "Fall",
+        "stable": "Stable"
+      }
+    },
+    "analysis": {
+      "eyebrow": "Analysis",
+      "title": "Price Trends",
+      "status": "Analyzing",
+      "coop_price": "Cooperative Price",
+      "market_price_avg": "Market Price (Avg)",
+      "net_advantage": "Net Advantage",
+      "legend_market": "Market Price",
+      "legend_market_short": "Market",
+      "legend_coop_short": "Cooperative"
+    },
+    "history": {
+      "eyebrow": "Data",
+      "title": "Records History",
+      "desc": "Data sourced from local markets.",
+      "search": "Search...",
+      "filter": "Filter",
+      "all_products": "All products",
+      "col_date": "Date",
+      "col_product": "Product",
+      "col_location": "Record Location",
+      "col_price": "Market Price",
+      "col_trend": "Trend",
+      "source": "Source: ARM Price Observatory",
+      "load_more": "Load More"
+    },
+    "newsletter": {
+      "eyebrow": "Newsletter",
+      "title": "Do not miss the best deals",
+      "desc": "Receive market analysis and our exclusive rates every week, straight to your inbox.",
+      "placeholder": "Your email address",
+      "button": "Subscribe for free",
+      "disclaimer": "No commitment. Unsubscribe at any time."
+    }
+  },
+  "about": {
+    "stat1": "Hectares",
+    "stat2": "Tons Exported",
+    "stat3": "Sales Rate",
+    "stat4": "Active Members",
+    "hero": {
+      "badge": "Our History",
+      "title": "Agricultural excellence at the heart of Casamance.",
+      "subtitle": "Since 2009, we have united the region's strengths to collectively produce, promote and export the authentic riches of our land."
+    },
+    "mission": {
+      "title": "Structure and develop the fruit industry.",
+      "p1": "Our mission is to offer our producers the tools, training and outlets they need to live decently from their land, while guaranteeing excellence to our customers.",
+      "p2": "We believe that organized, traced and certified agriculture can sustainably transform the living conditions of thousands of families while preserving the unique ecosystems of Casamance."
+    },
+    "values": {
+      "title": "What guides us"
+    },
+    "timeline": {
+      "title": "15 years of commitment"
+    },
+    "zones": {
+      "title": "Our Production Zones"
+    },
+    "cta": {
+      "title": "Join the movement",
+      "subtitle": "Whether you are a producer, buyer or partner, let's build the agriculture of tomorrow together.",
+      "join": "Become a Member",
+      "contact": "Contact Us"
+    },
+    "static": {
+      "founded": "Founded in",
+      "since": "Since",
+      "15years": "15 years",
+      "quote": "\"The land of Casamance feeds thousands of families.\"",
+      "geography": "Geography",
+      "vision": "Four territories, one common vision: to promote local speculations on an international scale.",
+      "members": "Members",
+      "join_badge": "Join us"
+    }
+  },
+  "public_projects": {
+    "hero": {
+      "badge": "Our Initiatives",
+      "title": "Projects & Programs",
+      "subtitle": "Concrete investments to strengthen the capacities of our producers, modernize the sector and open new markets.",
+      "bg_label": "PROJECTS"
+    },
+    "stats": {
+      "total": "Total Projects",
+      "budget": "Mobilized Budget",
+      "active": "Active Projects",
+      "finished": "Completed Projects",
+      "fcfa": " XOF"
+    },
+    "filters": {
+      "all": "All",
+      "ongoing": "Ongoing",
+      "planned": "Planned",
+      "finished": "Finished"
+    },
+    "list": {
+      "empty": "No project in this category.",
+      "period": "Period",
+      "budget": "Budget",
+      "beneficiaries": "Beneficiaries",
+      "status": {
+        "ongoing": "Ongoing",
+        "finished": "Completed",
+        "planned": "Planned"
+      }
+    },
+    "cta": {
+      "badge": "Partnerships",
+      "title": "Do you want to support our projects?",
+      "subtitle": "Partners, donors or investors — contact us to contribute to the development of the cooperative.",
+      "contact": "Contact Us",
+      "about": "The Cooperative",
+      "bg_label": "SUPPORT"
+    }
+  },
+  "contact": {
+    "hero": {
+      "badge": "Write to us",
+      "title": "Let's talk",
+      "subtitle": "A question about our products, a partnership or the cooperative? Our team will answer you as soon as possible.",
+      "bg_label": "CONTACT"
+    },
+    "info": {
+      "eyebrow": "Information",
+      "title": "Find us",
+      "hq": "Our Headquarters",
+      "hq_desc": "Come meet us in the heart of the production region.",
+      "phone": "Phone",
+      "phone_desc": "Monday to Friday, 8am to 6pm.",
+      "email": "Email",
+      "email_desc": "Response within 24 business hours.",
+      "senegal": "Ziguinchor, Senegal"
+    },
+    "form": {
+      "success_title": "Message sent!",
+      "success_desc": "We have received your message and will answer you as soon as possible.",
+      "success_button": "Send another message",
+      "eyebrow": "Form",
+      "title": "Send us a message",
+      "desc": "Fill out this form and we will answer you as soon as possible.",
+      "name_label": "Full Name",
+      "name_placeholder": "John Doe",
+      "email_label": "Email",
+      "email_placeholder": "john@example.com",
+      "subject_label": "Subject",
+      "subject_placeholder": "Ex: Information about mango harvests",
+      "message_label": "Message",
+      "message_placeholder": "Detail your need, your project or your question here...",
+      "button_idle": "Send message",
+      "button_sending": "Sending...",
+      "disclaimer": "Your data is protected and will only be used to respond to your request.",
+      "error_toast": "An error occurred. Please try again."
+    },
+    "quick": {
+      "title": "Need a quick response?",
+      "desc": "Call us directly or log into the member area.",
+      "email_button": "Send an email"
+    }
+  },
+  "blog": {
+    "hero": {
+      "badge": "Journal",
+      "title": "News",
+      "subtitle": "News from the cooperative, our producers, markets and sustainable agriculture in Casamance.",
+      "bg_label": "NEWS"
+    },
+    "featured": {
+      "badge": "Featured",
+      "read": "Read article"
+    },
+    "list": {
+      "all": "All articles",
+      "empty": "No articles in this category."
+    },
+    "cta": {
+      "badge": "Newsletter",
+      "title": "Stay informed",
+      "subtitle": "Follow the news, harvesting campaigns and cooperative offers.",
+      "contact": "Contact Us",
+      "home": "Back to home",
+      "bg_label": "JOURNAL"
+    },
+    "categories": {
+      "Actualités": "News",
+      "Agriculture": "Agriculture",
+      "Marchés": "Markets",
+      "Vie coopérative": "Cooperative Life",
+      "Tous les articles": "All articles"
+    }
+  },
+  "project_detail": {
+    "back": "Back to projects",
+    "not_found": "Project not found.",
+    "status": {
+      "ongoing": "Ongoing",
+      "finished": "Completed",
+      "planned": "Planned"
+    },
+    "meta": {
+      "period": "Period",
+      "budget": "Allocated budget",
+      "beneficiaries": "Beneficiaries",
+      "partners": "Partners"
+    },
+    "tabs": {
+      "description": "Detailed description",
+      "objectives": "Targeted objectives",
+      "results": "Expected results"
+    },
+    "empty": "Not specified"
+  },
+  "blog_article": {
+    "back": "Back to news",
+    "not_found": "Article not found.",
+    "back_list": "See all articles",
+    "reading_time": "read",
+    "coming_soon": "Content coming soon."
+  },
+  "projects": {
+    "categories": {
+      "Infrastructure": "Infrastructure",
+      "Agriculture durable": "Sustainable Agriculture",
+      "Eau & Irrigation": "Water & Irrigation",
+      "Formation": "Training",
+      "Commerce international": "International Trade",
+      "Valorisation": "Value Addition"
+    }
+  }
+}
