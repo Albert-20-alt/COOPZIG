@@ -5,9 +5,11 @@ import { useConfigValue } from "@/hooks/useSiteConfig";
 import { formatNumber } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const scrollTo = (id: string) => {
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
@@ -155,7 +157,7 @@ const HeroSection = () => {
 
               {/* Secondary */}
               <button
-                onClick={() => scrollTo("#commander")}
+                onClick={() => navigate("/qui-sommes-nous")}
                 className="group flex items-center justify-center gap-3 px-8 py-4 rounded-full font-semibold text-sm text-white/80 border border-white/[0.15] hover:border-white/[0.35] hover:text-white hover:bg-white/[0.06] transition-all duration-300 backdrop-blur-sm"
               >
                 {t("landing.cta_learn_more", "Découvrir la coopérative")}
