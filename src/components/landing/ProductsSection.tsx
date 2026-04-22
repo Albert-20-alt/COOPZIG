@@ -144,7 +144,7 @@ const ProductsSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.3, duration: 1 }}
-              className="mt-8 sm:mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 border-t border-black/5 pt-8 sm:pt-12"
+              className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 border-t border-black/5 pt-8 sm:pt-12"
             >
                 {paginatedProducts.map((p, i) => {
                   // Sanitize season display (consistent with admin)
