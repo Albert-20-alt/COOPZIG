@@ -155,12 +155,11 @@ const HeroSection = () => {
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, #f7e09a 0%, #f5c048 50%, #d48a14 100%)" }} />
               </button>
 
-              {/* Secondary */}
               <button
-                onClick={() => navigate("/qui-sommes-nous")}
+                onClick={() => scrollTo("#commander")}
                 className="group flex items-center justify-center gap-3 px-8 py-4 rounded-full font-semibold text-sm text-white/80 border border-white/[0.15] hover:border-white/[0.35] hover:text-white hover:bg-white/[0.06] transition-all duration-300 backdrop-blur-sm"
               >
-                {t("landing.cta_learn_more", "Découvrir la coopérative")}
+                {t("landing.cta_learn_more", "Faire une demande")}
               </button>
             </motion.div>
 

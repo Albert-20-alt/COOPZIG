@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   FileDown, FileText, Users, Sprout, Package,
   ShoppingCart, Coins, PiggyBank, Wallet, Inbox,
-  Loader2, CheckCircle2,
+  Loader2, CheckCircle2, Eye,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,54 +20,88 @@ const today = () => format(new Date(), "dd MMMM yyyy", { locale: fr });
 const fileDate = () => format(new Date(), "yyyy-MM-dd");
 
 function buildPDF(title: string, headers: string[], rows: (string | number)[][]): jsPDF {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const orientation = headers.length > 6 ? "landscape" : "portrait";
+  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
   // ── Header band ──────────────────────────────────────────────────────────
-  doc.setFillColor(26, 46, 28);
-  doc.rect(0, 0, 210, 28, "F");
+  doc.setFillColor(26, 46, 28); // CRPAZ Dark Green
+  doc.rect(0, 0, pageWidth, 5, "F");
 
-  doc.setFontSize(16);
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(24);
+  doc.setTextColor(26, 46, 28);
   doc.setFont("helvetica", "bold");
-  doc.text("CRPAZ – Coopérative de Ziguinchor", 14, 11);
+  doc.text("CRPAZ", 14, 20);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.setFont("helvetica", "normal");
+  doc.text("Coopérative Régionale des Planteurs et Agriculteurs de Ziguinchor", 14, 25);
+  doc.text("Siège : Ziguinchor, Sénégal | Email : contact@crpaz.sn | Tél : +221 77 000 00 00", 14, 30);
+
+  // Document Title
+  doc.setFontSize(16);
+  doc.setTextColor(30, 30, 30);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Rapport Analytique : ${title}`, 14, 45);
 
   doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(180, 230, 185);
-  doc.text(`Rapport : ${title}`, 14, 19);
-  doc.text(`Généré le ${today()}`, 14, 24.5);
+  doc.text(`Généré le : ${today()}`, 14, 51);
+
+  // Separator line
+  doc.setDrawColor(230, 230, 230);
+  doc.setLineWidth(0.5);
+  doc.line(14, 55, pageWidth - 14, 55);
 
   // ── Table ────────────────────────────────────────────────────────────────
   autoTable(doc, {
-    startY: 34,
+    startY: 62,
     head: [headers],
     body: rows.map((r) => r.map(String)),
     styles: {
+      font: "helvetica",
       fontSize: 8,
-      cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
-      valign: "middle",
+      cellPadding: 4,
+      textColor: [60, 60, 60],
+      lineColor: [230, 230, 230],
+      lineWidth: 0.1,
     },
     headStyles: {
-      fillColor: [26, 46, 28],
-      textColor: [255, 255, 255],
+      fillColor: [248, 250, 248],
+      textColor: [26, 46, 28],
       fontStyle: "bold",
+      lineColor: [200, 215, 200],
+      lineWidth: 0.1,
     },
-    alternateRowStyles: { fillColor: [247, 250, 247] },
-    tableLineColor: [220, 235, 220],
-    tableLineWidth: 0.1,
+    alternateRowStyles: { fillColor: [253, 253, 253] },
     margin: { left: 14, right: 14 },
+    theme: 'grid',
   });
 
   // ── Footer ───────────────────────────────────────────────────────────────
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(7);
-    doc.setTextColor(180, 180, 180);
+    
+    // Footer line
+    doc.setDrawColor(230, 230, 230);
+    doc.setLineWidth(0.5);
+    doc.line(14, pageHeight - 15, pageWidth - 14, pageHeight - 15);
+
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
     doc.text(
-      `Document confidentiel – CRPAZ © ${new Date().getFullYear()}   |   Page ${i}/${pageCount}`,
+      `Document interne strictement confidentiel – CRPAZ © ${new Date().getFullYear()}`,
       14,
-      doc.internal.pageSize.height - 7,
+      pageHeight - 9
+    );
+    doc.text(
+      `Page ${i} / ${pageCount}`,
+      pageWidth - 25,
+      pageHeight - 9
     );
   }
   return doc;
@@ -111,11 +145,12 @@ const REPORTS: ReportDef[] = [
     fetch: async () => {
       const { data, error } = await supabase
         .from("producteurs")
-        .select("nom, localisation, superficie, cultures, certification, created_at")
+        .select("nom, telephone, localisation, superficie, cultures, certification, created_at")
         .order("nom");
       if (error) throw error;
       const rows = (data || []).map((p: any) => [
         p.nom,
+        p.telephone || "—",
         p.localisation || "—",
         `${p.superficie ?? 0} ha`,
         (p.cultures || []).join(", ") || "—",
@@ -123,7 +158,7 @@ const REPORTS: ReportDef[] = [
         p.created_at ? format(new Date(p.created_at), "dd/MM/yyyy") : "—",
       ]);
       return {
-        headers: ["Nom", "Localisation", "Superficie", "Cultures", "Certification", "Membre depuis"],
+        headers: ["Nom", "Téléphone", "Localisation", "Superficie", "Cultures", "Certification", "Membre depuis"],
         rows,
       };
     },
@@ -332,8 +367,23 @@ const COLOR_MAP: Record<string, { bg: string; icon: string; badge: string }> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Rapports = () => {
-  const [downloading, setDownloading] = useState<Record<string, "pdf" | "csv" | null>>({});
+  const [downloading, setDownloading] = useState<Record<string, "pdf" | "csv" | "preview" | null>>({});
   const [done, setDone] = useState<Record<string, boolean>>({});
+
+  const handlePreview = async (report: ReportDef) => {
+    setDownloading((prev) => ({ ...prev, [report.id]: "preview" }));
+    try {
+      const { headers, rows } = await report.fetch();
+      const doc = buildPDF(report.title, headers, rows);
+      const blobUrl = doc.output("bloburl");
+      window.open(blobUrl.toString(), "_blank");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur lors de la génération de l'aperçu");
+    } finally {
+      setDownloading((prev) => ({ ...prev, [report.id]: null }));
+    }
+  };
 
   const handleDownload = async (report: ReportDef, format: "pdf" | "csv") => {
     setDownloading((prev) => ({ ...prev, [report.id]: format }));
@@ -394,7 +444,7 @@ const Rapports = () => {
               </div>
 
               {/* Actions */}
-              <div className="px-4 py-3 mt-auto flex gap-2">
+              <div className="px-4 py-3 mt-auto flex flex-col gap-2">
                 {isDone ? (
                   <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold w-full justify-center py-1">
                     <CheckCircle2 size={14} />
@@ -403,31 +453,46 @@ const Rapports = () => {
                 ) : (
                   <>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
-                      className="flex-1 h-8 text-xs gap-1.5 border-gray-200 dark:border-[#1e2d45] hover:border-[#1A2E1C] hover:text-[#1A2E1C] transition-colors"
+                      className="w-full h-8 text-xs gap-1.5 font-medium hover:bg-gray-200 dark:hover:bg-[#1e2d45]"
                       disabled={isLoading}
-                      onClick={() => handleDownload(report, "pdf")}
+                      onClick={() => handlePreview(report)}
                     >
-                      {isLoading && downloading[report.id] === "pdf"
+                      {isLoading && downloading[report.id] === "preview"
                         ? <Loader2 size={12} className="animate-spin" />
-                        : <FileText size={12} />
+                        : <Eye size={12} />
                       }
-                      PDF
+                      Aperçu
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 text-xs gap-1.5 border-gray-200 dark:border-[#1e2d45] hover:border-[#1A2E1C] hover:text-[#1A2E1C] transition-colors"
-                      disabled={isLoading}
-                      onClick={() => handleDownload(report, "csv")}
-                    >
-                      {isLoading && downloading[report.id] === "csv"
-                        ? <Loader2 size={12} className="animate-spin" />
-                        : <FileDown size={12} />
-                      }
-                      CSV
-                    </Button>
+                    <div className="flex gap-2 w-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 border-gray-200 dark:border-[#1e2d45] hover:border-[#1A2E1C] hover:text-[#1A2E1C] transition-colors"
+                        disabled={isLoading}
+                        onClick={() => handleDownload(report, "pdf")}
+                      >
+                        {isLoading && downloading[report.id] === "pdf"
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <FileText size={12} />
+                        }
+                        PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs gap-1.5 border-gray-200 dark:border-[#1e2d45] hover:border-[#1A2E1C] hover:text-[#1A2E1C] transition-colors"
+                        disabled={isLoading}
+                        onClick={() => handleDownload(report, "csv")}
+                      >
+                        {isLoading && downloading[report.id] === "csv"
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <FileDown size={12} />
+                        }
+                        CSV
+                      </Button>
+                    </div>
                   </>
                 )}
               </div>

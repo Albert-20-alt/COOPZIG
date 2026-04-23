@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
-import { Users, TreePine, Package, TrendingUp, ShoppingCart, Truck, Sun, MapPin, Sparkles, Zap, ShieldCheck, ArrowRight, LayoutGrid, Globe, Activity, History, Mail, Bell, Inbox } from "lucide-react";
+import { Users, TreePine, Package, TrendingUp, ShoppingCart, Truck, Sun, Zap, ShieldCheck, ArrowRight, Globe, Mail, Bell, Inbox, FileText, CheckCircle2, BarChart2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,35 @@ export default function Dashboard() {
   const { data: commandes = [] } = useQuery({ queryKey: ["commandes-dashboard"], queryFn: async () => { const { data } = await supabase.from("commandes").select(`id, created_at, acheteur_id, produit_nom, quantite, statut, montant, unite, profiles ( full_name, entreprise )`).order("created_at", { ascending: false }).limit(6); return data || []; } });
   const { data: livraisonsCount = 0 } = useQuery({ queryKey: ["livraisons-count"], queryFn: async () => { const { count } = await supabase.from("livraisons").select("*", { count: "exact", head: true }); return count || 0; } });
   const { data: recoltes = [] } = useQuery({ queryKey: ["recoltes-dashboard"], queryFn: async () => { const { data } = await supabase.from("recoltes").select("produit, quantite, date_disponibilite").order("date_disponibilite", { ascending: true }); return data || []; } });
+
+  // Fiches Analytiques KPIs
+  const { data: fichesData = [] } = useQuery({
+    queryKey: ["fiches-analytiques-dashboard"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("fiches_analytiques")
+        .select("statut, prix_unitaire, quantite_totale, charges_variables, charges_fixes, couts_commercialisation, taux_taxes, taux_commission_producteur, taux_commission_etaam, taux_commission_cooperative");
+      return data || [];
+    },
+  });
+
+  const fichesStats = useMemo(() => {
+    const total = fichesData.length;
+    const validees = fichesData.filter((f: any) => f.statut === "validé").length;
+    const brouillons = fichesData.filter((f: any) => f.statut === "brouillon").length;
+    let totalResultat = 0;
+    fichesData.forEach((f: any) => {
+      const px = Number(f.prix_unitaire) || 0;
+      const qt = Number(f.quantite_totale) || 0;
+      const sumItems = (arr: any[]) => (arr || []).reduce((s: number, it: any) => {
+        const mu = Number(it.montant_unitaire) > 0 ? Number(it.montant_unitaire) : Math.round(px * Number(it.pct_defaut) / 100);
+        return s + mu;
+      }, 0);
+      const cout_u = sumItems(f.charges_variables) + sumItems(f.charges_fixes) + sumItems(f.couts_commercialisation);
+      totalResultat += (px - cout_u) * qt;
+    });
+    return { total, validees, brouillons, totalResultat };
+  }, [fichesData]);
 
   // Communication KPIs
   const { data: unreadMessages = 0 } = useQuery({ queryKey: ["unread-messages-count"], queryFn: async () => { const { count } = await (supabase as any).from("contact_messages").select("*", { count: "exact", head: true }).eq("statut", "Nouvelle"); return count || 0; } });
@@ -251,6 +280,46 @@ export default function Dashboard() {
                    <Bar dataKey="agrumes" fill="#0A1A0F" radius={[4, 4, 0, 0]} barSize={32} />
                 </BarChart>
              </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Fiches Analytiques KPIs */}
+        <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600"><BarChart2 size={18} /></div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Fiches Analytiques</h3>
+                <p className="text-sm text-gray-500">Résultats d'exploitation agrégés</p>
+              </div>
+            </div>
+            <Link to="/fiches-analytiques" className="text-sm font-medium text-emerald-700 hover:text-emerald-900 flex items-center gap-1">
+              Gérer <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
+            {[
+              { label: "Total fiches",   value: fichesStats.total,     icon: FileText,     color: "text-gray-700",    bg: "bg-gray-50" },
+              { label: "Validées",       value: fichesStats.validees,  icon: CheckCircle2, color: "text-emerald-700", bg: "bg-emerald-50" },
+              { label: "Brouillons",     value: fichesStats.brouillons,icon: FileText,     color: "text-amber-700",   bg: "bg-amber-50" },
+              {
+                label: "Résultat total",
+                value: fichesStats.totalResultat >= 0
+                  ? `+${(fichesStats.totalResultat / 1000000).toFixed(1)}M CFA`
+                  : `${(fichesStats.totalResultat / 1000000).toFixed(1)}M CFA`,
+                icon: TrendingUp,
+                color: fichesStats.totalResultat >= 0 ? "text-emerald-700" : "text-red-600",
+                bg: fichesStats.totalResultat >= 0 ? "bg-emerald-50" : "bg-red-50",
+              },
+            ].map((kpi) => (
+              <div key={kpi.label} className="p-5 flex flex-col gap-2">
+                <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center`}>
+                  <kpi.icon size={16} className={kpi.color} />
+                </div>
+                <p className={`text-xl font-bold ${kpi.color}`}>{kpi.value}</p>
+                <p className="text-xs font-medium text-gray-400">{kpi.label}</p>
+              </div>
+            ))}
           </div>
         </div>
 

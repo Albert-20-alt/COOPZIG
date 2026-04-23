@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, MessageSquare, User, AtSign, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
@@ -56,6 +56,18 @@ const Contact = () => {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (window.location.hash === "#formulaire-demande") {
+      setTimeout(() => {
+        const el = document.getElementById("formulaire-demande");
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY - 100;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 300);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] font-sans">
@@ -176,7 +188,7 @@ const Contact = () => {
           </div>
 
           {/* Right: form ──────────────────────────────────────────────────────── */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3" id="formulaire-demande">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}

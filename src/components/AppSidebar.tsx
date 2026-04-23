@@ -5,7 +5,7 @@ import {
   TrendingUp, AlertTriangle, Coins, Menu, X, LogOut,
   Inbox, MessageSquare, ShieldCheck, Settings, BookOpen,
   PiggyBank, Wallet, FileText, Activity, BarChart2, Newspaper, FolderKanban,
-  Moon, Sun, Tag, FileDown,
+  Moon, Sun, Tag, FileDown, Mail,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,11 +49,12 @@ const navGroups = [
   {
     label: "Finances",
     items: [
-      { to: "/finances",          label: "Finances",           icon: BarChart3, moduleKey: "finances" },
-      { to: "/journal-comptable", label: "Journal comptable",  icon: BookOpen,  moduleKey: "journal_comptable" },
-      { to: "/cotisations",       label: "Cotisations",        icon: PiggyBank, moduleKey: "cotisations" },
-      { to: "/tresorerie",        label: "Trésorerie",         icon: Wallet,    moduleKey: "tresorerie" },
-      { to: "/facturation",       label: "Facturation",        icon: FileText,  moduleKey: "facturation" },
+      { to: "/finances",             label: "Finances",            icon: BarChart3, moduleKey: "finances" },
+      { to: "/journal-comptable",    label: "Journal comptable",   icon: BookOpen,  moduleKey: "journal_comptable" },
+      { to: "/cotisations",          label: "Cotisations",         icon: PiggyBank, moduleKey: "cotisations" },
+      { to: "/tresorerie",           label: "Trésorerie",          icon: Wallet,    moduleKey: "tresorerie" },
+      { to: "/facturation",          label: "Facturation",         icon: FileText,  moduleKey: "facturation" },
+      { to: "/fiches-analytiques",   label: "Fiches Analytiques",  icon: BarChart2, moduleKey: "finances" },
     ],
   },
   {
@@ -68,9 +69,10 @@ const navGroups = [
   {
     label: "Communication",
     items: [
-      { to: "/admin-messages", label: "Messages",   icon: MessageSquare,  moduleKey: "messages" },
-      { to: "/admin-blog",     label: "Blog",        icon: Newspaper,      moduleKey: "messages" },
-      { to: "/admin-projets",  label: "Projets",     icon: FolderKanban,   moduleKey: "messages" },
+      { to: "/admin-messages",   label: "Messages",          icon: MessageSquare, moduleKey: "messages" },
+      { to: "/admin-blog",       label: "Blog",              icon: Newspaper,     moduleKey: "blog" },
+      { to: "/admin-projets",    label: "Projets",           icon: FolderKanban,  moduleKey: "projets" },
+      { to: "/campagnes-email",  label: "Campagnes Email",   icon: Mail,          moduleKey: "campagnes_email" },
     ],
   },
 ];

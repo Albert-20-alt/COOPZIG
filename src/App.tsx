@@ -60,6 +60,8 @@ const GestionSite = lazy(() => import("./pages/GestionSite"));
 const GestionDocuments = lazy(() => import("./pages/GestionDocuments"));
 const GestionPrix = lazy(() => import("./pages/GestionPrix"));
 const Rapports = lazy(() => import("./pages/Rapports"));
+const FichesAnalytiques = lazy(() => import("./pages/FichesAnalytiques"));
+const CampagnesEmail = lazy(() => import("./pages/CampagnesEmail"));
 const GestionInvestisseurs = lazy(() => import("./pages/GestionInvestisseurs"));
 const AdminMessages = lazy(() => import("./pages/AdminMessages"));
 const CatalogueProduits = lazy(() => import("./pages/CatalogueProduits"));
@@ -145,6 +147,10 @@ const AnalyticsTracker = () => {
   const location = useLocation();
   useEffect(() => {
     logPageView(location.pathname + location.search);
+    // Retour en haut de page à chaque changement de route (sauf s'il y a une ancre)
+    if (!location.hash) {
+      window.scrollTo(0, 0);
+    }
   }, [location]);
   return null;
 };
@@ -206,6 +212,8 @@ const App = () => (
             <Route path="/gestion-documents" element={<ProtectedRoute><GestionDocuments /></ProtectedRoute>} />
             <Route path="/gestion-prix" element={<ProtectedRoute><GestionPrix /></ProtectedRoute>} />
             <Route path="/rapports" element={<ProtectedRoute><Rapports /></ProtectedRoute>} />
+            <Route path="/fiches-analytiques" element={<ProtectedRoute><FichesAnalytiques /></ProtectedRoute>} />
+            <Route path="/campagnes-email" element={<ProtectedRoute><CampagnesEmail /></ProtectedRoute>} />
             <Route path="/catalogue" element={<ProtectedRoute><CatalogueProduits /></ProtectedRoute>} />
             <Route path="/gestion-investisseurs" element={<ProtectedRoute><GestionInvestisseurs /></ProtectedRoute>} />
             <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
