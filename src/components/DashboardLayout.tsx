@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import AppSidebar from "./AppSidebar";
 import { useTheme } from "@/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
+import { useSessionTracker } from "@/hooks/useActivityLog";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children, title, subtitle, actions }: DashboardLayoutProps) => {
   const { isDark, toggle } = useTheme();
+  useSessionTracker(); // Track session for all authenticated users
 
   return (
     <div className="min-h-screen bg-[#F5F6FA] dark:bg-[#0c1220] transition-colors duration-200">

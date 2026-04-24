@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { Save, Loader2, Plus, Trash2, Coins, ExternalLink } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { Save, Loader2, Plus, Trash2, ExternalLink, ImagePlus, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteConfig, useUpdateSiteConfig } from "@/hooks/useSiteConfig";
 import { toast } from "sonner";
@@ -113,6 +113,37 @@ const GestionPrix = () => {
   const [produitEdits, setProduitEdits] = useState<Record<string, any>>({});
   const [savingProduits, setSavingProduits] = useState<string[]>([]);
   const [togglingProduits, setTogglingProduits] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState<string[]>([]);
+  const imageInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const uploadProductImage = async (p: any, file: File) => {
+    setUploadingImage(prev => [...prev, p.id]);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `produits/${p.id}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("content-images").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("content-images").getPublicUrl(path);
+      const url = data.publicUrl;
+      const { error } = await (supabase as any).from("produits").update({ image_url: url }).eq("id", p.id);
+      if (error) throw error;
+      toast.success("Photo mise à jour");
+      queryClient.invalidateQueries({ queryKey: ["produits-ecommerce-admin"] });
+      queryClient.invalidateQueries({ queryKey: ["produits-public-ecommerce"] });
+    } catch {
+      toast.error("Erreur lors du chargement de l'image");
+    } finally {
+      setUploadingImage(prev => prev.filter(id => id !== p.id));
+    }
+  };
+
+  const removeProductImage = async (p: any) => {
+    const { error } = await (supabase as any).from("produits").update({ image_url: null }).eq("id", p.id);
+    if (error) { toast.error("Erreur"); return; }
+    toast.success("Photo supprimée");
+    queryClient.invalidateQueries({ queryKey: ["produits-ecommerce-admin"] });
+    queryClient.invalidateQueries({ queryKey: ["produits-public-ecommerce"] });
+  };
 
   const editProduit = (id: string, field: string, val: any) =>
     setProduitEdits((prev) => ({
@@ -129,7 +160,7 @@ const GestionPrix = () => {
     setSavingProduits((prev) => [...prev, p.id]);
     const edits = produitEdits[p.id] || {};
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("produits")
         .update({
           categorie:        edits.categorie        ?? p.categorie,
@@ -139,6 +170,7 @@ const GestionPrix = () => {
           norme_qualite:    edits.norme_qualite    ?? p.norme_qualite,
           description:      edits.description      ?? p.description,
           quantite_estimee: Number(edits.quantite_estimee ?? p.quantite_estimee),
+          image_url:        edits.image_url        ?? p.image_url ?? null,
         })
         .eq("id", p.id);
       if (error) throw error;
@@ -442,6 +474,58 @@ const GestionPrix = () => {
                           className="h-8 text-sm"
                           placeholder="Brève description du produit…"
                         />
+                      </div>
+
+                      {/* Image upload */}
+                      <div className="space-y-1 col-span-2 md:col-span-4">
+                        <Label className="text-xs">Photo du produit</Label>
+                        <div className="flex items-center gap-3">
+                          {/* Preview */}
+                          {p.image_url ? (
+                            <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 shrink-0 group">
+                              <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
+                              <button
+                                onClick={() => removeProductImage(p)}
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                title="Supprimer la photo"
+                              >
+                                <X size={14} className="text-white" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 bg-gray-50 dark:bg-white/[0.03]">
+                              <ImagePlus size={18} className="text-gray-300" />
+                            </div>
+                          )}
+                          {/* Upload button */}
+                          <div>
+                            <input
+                              ref={el => { imageInputRefs.current[p.id] = el; }}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) uploadProductImage(p, file);
+                                e.target.value = "";
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs gap-1.5"
+                              disabled={uploadingImage.includes(p.id)}
+                              onClick={() => imageInputRefs.current[p.id]?.click()}
+                            >
+                              {uploadingImage.includes(p.id)
+                                ? <><Loader2 size={12} className="animate-spin" /> Chargement…</>
+                                : <><ImagePlus size={12} /> {p.image_url ? "Changer la photo" : "Ajouter une photo"}</>
+                              }
+                            </Button>
+                            <p className="text-[10px] text-gray-400 mt-1">JPG, PNG ou WebP · max 5 MB</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

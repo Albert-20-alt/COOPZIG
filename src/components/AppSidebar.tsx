@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useConfigValue } from "@/hooks/useSiteConfig";
 import { useMyPermissions } from "@/hooks/usePermissions";
 import { useTheme } from "@/context/ThemeContext";
+import AdminNotificationsBell from "@/components/AdminNotificationsBell";
 
 const navGroups = [
   {
@@ -305,6 +306,9 @@ const AppSidebar = () => {
         </nav>
 
         <div className="px-3 py-4 border-t border-gray-100 dark:border-[#1e2d45] space-y-2">
+          {/* Notifications bell — superadmin only */}
+          {isSuperAdmin && <AdminNotificationsBell />}
+
           {/* Dark mode toggle */}
           <button
             onClick={toggle}

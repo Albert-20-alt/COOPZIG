@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 export default function Profil() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const logActivity = useActivityLog();
 
   const [form, setForm] = useState({
     full_name: "",
@@ -29,7 +31,7 @@ export default function Profil() {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -67,12 +69,19 @@ export default function Profil() {
       if (!user) throw new Error("Non authentifié");
       const { error } = await supabase
         .from("profiles")
-        .upsert({ id: user.id, ...payload });
+        .update(payload)
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-profile"] });
       toast({ title: "Profil mis à jour avec succès" });
+      logActivity.mutate({
+        action: "profile_update",
+        module: "profil",
+        label: "Mise à jour des informations personnelles",
+        notify: true,
+      });
     },
     onError: (e: any) => {
       toast({
@@ -96,6 +105,12 @@ export default function Profil() {
       });
       if (error) throw error;
       toast({ title: "Email de réinitialisation envoyé", description: "Veuillez vérifier votre boîte de réception." });
+      logActivity.mutate({
+        action: "password_change",
+        module: "profil",
+        label: "Demande de réinitialisation du mot de passe",
+        notify: true,
+      });
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
     }

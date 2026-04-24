@@ -117,19 +117,25 @@ const PrixPublic = () => {
         const key = Object.keys(SPEC_STYLE).find(k => p.nom.toLowerCase().includes(k)) || "mangue";
         const style = SPEC_STYLE[key] ?? DEFAULT_SPEC_STYLE;
         
+        const prixCoop = Number(p.prix_coop) || 0;
+        const prixMarche = Number(p.prix_marche) || 0;
+        const changePercent = prixMarche > 0
+          ? Math.round(((prixMarche - prixCoop) / prixMarche) * 100)
+          : 0;
         return {
           id: p.id,
           nom: p.nom,
           categorie: p.categorie || "Produit",
-          prixCoop: Number(p.prix_coop) || 0,
-          prixMarche: Number(p.prix_marche) || 0,
+          prixCoop,
+          prixMarche,
           unite: "CFA / kg",
           saison: p.saison || "En cours",
-          tendance: Number(p.prix_marche) > Number(p.prix_coop) ? "baisse" : "stable",
-          changePercent: 0,
+          tendance: prixMarche > prixCoop ? "baisse" : "stable",
+          changePercent,
           volumeDisponible: `${p.quantite_estimee || 0} t`,
           certification: p.norme_qualite || "Standard",
           description: p.description || "",
+          imageUrl: p.image_url || null,
           ...style,
         };
       });
@@ -350,7 +356,9 @@ const PrixPublic = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {SPECULATIONS.map((spec, i) => {
               const isSelected = selectedSpec === spec.id;
-              const discountPct = Math.round(((spec.prixMarche - spec.prixCoop) / spec.prixMarche) * 100);
+              const discountPct = spec.prixMarche > 0
+                ? Math.round(((spec.prixMarche - spec.prixCoop) / spec.prixMarche) * 100)
+                : 0;
               return (
                 <motion.div
                   key={spec.id}
@@ -373,8 +381,11 @@ const PrixPublic = () => {
                   {/* Emoji + name */}
                   <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-13 h-13 rounded-2xl bg-gray-50 border border-black/[0.04] flex items-center justify-center text-3xl w-14 h-14">
-                        {spec.emoji}
+                      <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-black/[0.04] flex items-center justify-center text-3xl overflow-hidden shrink-0">
+                        {(spec as any).imageUrl
+                          ? <img src={(spec as any).imageUrl} alt={spec.nom} className="w-full h-full object-cover" />
+                          : spec.emoji
+                        }
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-gray-900 tracking-tight">{spec.nom}</h3>
@@ -450,7 +461,10 @@ const PrixPublic = () => {
               {/* Active product card */}
               <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-7 backdrop-blur-sm">
                 <div className="flex items-center gap-3 mb-5">
-                  <span className="text-4xl">{activeSpec?.emoji}</span>
+                  {(activeSpec as any)?.imageUrl
+                    ? <img src={(activeSpec as any).imageUrl} alt={activeSpec?.nom} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    : <span className="text-4xl">{activeSpec?.emoji}</span>
+                  }
                   <div>
                     <h3 className="font-bold text-white">{activeSpec?.nom}</h3>
                     <p className="text-xs text-primary font-semibold uppercase tracking-wider mt-0.5">{t("markets.analysis.status", "En analyse")}</p>

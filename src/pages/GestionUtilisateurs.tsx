@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import {
   Users, Shield, Tractor, Plus, Trash2, Loader2, UserPlus, Mail, Phone,
   Search, ShieldAlert, ShoppingBag, Pencil, ChevronLeft, ChevronRight,
-  Briefcase, Megaphone, Wrench, Lock, Eye, Activity,
+  Briefcase, Megaphone, Wrench, Lock, Eye, Activity, UserX, ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { ALL_MODULES, ROLE_DEFAULT_PERMISSIONS, useSaveUserPermissions, useUserPermissions } from "@/hooks/usePermissions";
+import { useActivityLog } from "@/hooks/useActivityLog";
 import { Link } from "react-router-dom";
 
 type Profile = Tables<"profiles">;
@@ -249,6 +250,7 @@ const GestionUtilisateurs = () => {
   const [newUserEntreprise, setNewUserEntreprise] = useState("");
   const [newUserRole, setNewUserRole] = useState<AppRole>("commercial");
   const [newUserPermissions, setNewUserPermissions] = useState<string[]>(ROLE_DEFAULT_PERMISSIONS["commercial"]);
+  const [newUserCanDelete, setNewUserCanDelete] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
 
   const [quickRoleUserId, setQuickRoleUserId] = useState<string | null>(null);
@@ -264,6 +266,72 @@ const GestionUtilisateurs = () => {
   const [permissionsTarget, setPermissionsTarget] = useState<{ userId: string; userName: string; role: string } | null>(null);
 
   const savePermsMutation = useSaveUserPermissions();
+
+  // ─── Special permissions (can_delete_users) ───────────────────────────────
+  const { data: specialPerms, refetch: refetchSpecialPerms } = useQuery({
+    queryKey: ["special-perms"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_special_permissions" as any)
+        .select("user_id, permission");
+      return (data || []) as { user_id: string; permission: string }[];
+    },
+    enabled: true,
+  });
+
+  const hasDeletePermission = (userId: string) =>
+    specialPerms?.some(p => p.user_id === userId && p.permission === "can_delete_users") ?? false;
+
+  const toggleDeletePermission = useMutation({
+    mutationFn: async ({ userId, grant }: { userId: string; grant: boolean }) => {
+      if (grant) {
+        const { error } = await supabase
+          .from("user_special_permissions" as any)
+          .insert({ user_id: userId, permission: "can_delete_users", granted_by: user?.id });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("user_special_permissions" as any)
+          .delete()
+          .eq("user_id", userId)
+          .eq("permission", "can_delete_users");
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      refetchSpecialPerms();
+      toast.success("Permission de suppression mise à jour");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const logActivity = useActivityLog();
+
+  const deleteUser = useMutation({
+    mutationFn: async (params: { userId: string; userEmail?: string }) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: params.userId },
+      });
+      if (error || data?.error) throw new Error(error?.message || data?.error);
+      return { ...data, userEmail: params.userEmail };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["all-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["all-user-roles"] });
+      toast.success("Utilisateur supprimé");
+      logActivity.mutate({
+        action: "user_deleted",
+        module: "gestion_utilisateurs",
+        label: `Suppression de l'utilisateur ${data?.userEmail || data?.userId || ""}`,
+        entity_type: "user",
+        entity_id: data?.userId,
+        notify: true,
+        notifyTarget: { email: data?.userEmail },
+        details: { deleted_email: data?.userEmail },
+      });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const { data: isSuperAdmin, isLoading: checkingRole } = useQuery({
     queryKey: ["isSuperAdmin", user?.id],
@@ -362,11 +430,19 @@ const GestionUtilisateurs = () => {
         await savePermsMutation.mutateAsync({ userId: data.userId, modules: newUserPermissions });
       }
 
+      // Grant special delete permission if checked
+      if (data?.userId && newUserCanDelete) {
+        await supabase
+          .from("user_special_permissions" as any)
+          .insert({ user_id: data.userId, permission: "can_delete_users", granted_by: user?.id });
+      }
+
       toast.success(`Utilisateur créé : ${newUserEmail}`);
       queryClient.invalidateQueries({ queryKey: ["all-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["special-perms"] });
       setOpenCreateUser(false);
       setNewUserEmail(""); setNewUserPassword(""); setNewUserFullName("");
-      setNewUserPhone(""); setNewUserEntreprise("");
+      setNewUserPhone(""); setNewUserEntreprise(""); setNewUserCanDelete(false);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -540,6 +616,52 @@ const GestionUtilisateurs = () => {
                               <Button variant="outline" size="icon" className="h-8 w-8 text-gray-600" title="Voir activité" asChild>
                                 <Link to={`/supervision?user=${profile.user_id}`}><Eye size={14} /></Link>
                               </Button>
+
+                              {/* ── Superadmin-only: grant delete rights ── */}
+                              {isSuperAdmin && !roles.some(r => r.role === "superadmin") && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className={cn(
+                                    "h-8 w-8 transition-colors",
+                                    hasDeletePermission(profile.user_id)
+                                      ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
+                                      : "text-gray-400 hover:text-amber-600 hover:border-amber-300"
+                                  )}
+                                  title={hasDeletePermission(profile.user_id) ? "Révoquer droit de suppression" : "Accorder droit de suppression"}
+                                  onClick={() =>
+                                    toggleDeletePermission.mutate({
+                                      userId: profile.user_id,
+                                      grant: !hasDeletePermission(profile.user_id),
+                                    })
+                                  }
+                                  disabled={toggleDeletePermission.isPending}
+                                >
+                                  <ShieldCheck size={14} />
+                                </Button>
+                              )}
+
+                              {/* ── Delete user button (superadmin OR can_delete_users) ── */}
+                              {!roles.some(r => r.role === "superadmin") && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-400 hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors"
+                                  title="Supprimer l'utilisateur"
+                                  onClick={() =>
+                                    confirm({
+                                      title: "Supprimer l'utilisateur",
+                                      description: `Voulez-vous définitivement supprimer le compte de ${profile.full_name || profile.user_id} ? Cette action est irréversible.`,
+                                      confirmLabel: "Supprimer",
+                                      variant: "danger",
+                                      onConfirm: () => deleteUser.mutate({ userId: profile.user_id, userEmail: profile.user_id }),
+                                    })
+                                  }
+                                  disabled={deleteUser.isPending}
+                                >
+                                  <UserX size={14} />
+                                </Button>
+                              )}
                             </div>
                           )}
                         </td>
@@ -640,6 +762,40 @@ const GestionUtilisateurs = () => {
                     selectedModules={newUserPermissions}
                     onChange={setNewUserPermissions}
                   />
+
+                  {/* ── Permission spéciale : suppression ── */}
+                  <div className="mt-2 rounded-2xl border border-gray-100 bg-white overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/60">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Permissions Administratives Spéciales</p>
+                    </div>
+                    <div className="px-5 py-4">
+                      <label className="flex items-center justify-between gap-4 cursor-pointer group">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
+                            <UserX size={16} className="text-red-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">Droit de suppression d'utilisateurs</p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Permet à cet utilisateur de supprimer d'autres comptes sur la plateforme
+                              <span className="font-semibold text-amber-600"> (excepté le superadmin)</span>.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewUserCanDelete((v) => !v)}
+                          className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                            newUserCanDelete ? "bg-red-500" : "bg-gray-200"
+                          }`}
+                        >
+                          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            newUserCanDelete ? "translate-x-5" : "translate-x-0.5"
+                          }`} />
+                        </button>
+                      </label>
+                    </div>
+                  </div>
                 </TabsContent>
               </Tabs>
 

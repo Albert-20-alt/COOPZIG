@@ -14,28 +14,32 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
-    // Client with service role (admin privileges)
+
+    // Admin client — used for all privileged operations AND to verify the caller's JWT
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Client with user's JWT to verify they're superadmin
-    const authHeader = req.headers.get("Authorization")!;
-    const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Extract the caller's JWT from the Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Non autorisé — token manquant" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    // Use the admin client to validate the JWT — works with any key type (publishable or legacy)
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+      return new Response(JSON.stringify({ error: "Non autorisé — token invalide" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check if user is superadmin
+    // Check if caller is superadmin
     const { data: isSuperAdmin } = await supabaseAdmin.rpc("has_role", {
       _user_id: user.id,
       _role: "superadmin",
