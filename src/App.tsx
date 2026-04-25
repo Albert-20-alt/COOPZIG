@@ -11,6 +11,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import SiteMeta from "./components/SiteMeta";
 import Logo from "@/components/brand/Logo";
 import { initAnalytics, logPageView } from "./utils/analytics";
+import { ChatAssistant } from "./components/chat/ChatAssistant";
+
 
 // Initialize Analytics globally
 initAnalytics();
@@ -231,6 +233,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        <ChatAssistant />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
