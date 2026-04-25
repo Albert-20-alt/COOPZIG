@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { format, isToday, isTomorrow, isPast, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isThisMonth } from "date-fns";
+import { format, isToday, isTomorrow, isPast, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isThisMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -12,11 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus, Search, LayoutGrid, List, Calendar,
-  CheckSquare, FileText, CalendarClock, MapPin as MapPinIcon,
+  CheckSquare, CalendarClock, MapPin as MapPinIcon,
   ClipboardList, BarChart2, BookOpen, Zap, CalendarDays,
   Clock, AlertCircle, ChevronLeft, ChevronRight,
   Trash2, Edit3, X, CheckCircle2, Circle, Flag,
@@ -255,11 +254,12 @@ const TacheForm = ({
 };
 
 // ── Kanban card ───────────────────────────────────────────────────────────────
-const KanbanCard = ({ tache, onEdit, onDelete, onStatut }: {
+const KanbanCard = ({ tache, onEdit, onDelete, onStatut, onDragStart }: {
   tache: Tache;
   onEdit: () => void;
   onDelete: () => void;
   onStatut: (s: string) => void;
+  onDragStart: (e: React.DragEvent) => void;
 }) => {
   const tcfg = TYPE_CFG[tache.type] ?? TYPE_CFG.tache;
   const pcfg = PRIORITE_CFG[tache.priorite] ?? PRIORITE_CFG.normale;
@@ -268,7 +268,11 @@ const KanbanCard = ({ tache, onEdit, onDelete, onStatut }: {
   const isOverdue = tache.date_echeance && isPast(parseISO(tache.date_echeance)) && !isDone;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 group hover:shadow-md hover:border-gray-200 transition-all">
+    <div
+      draggable
+      onDragStart={onDragStart}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 group hover:shadow-md hover:border-gray-200 transition-all cursor-grab active:cursor-grabbing active:opacity-50 active:scale-[0.98]"
+    >
       {/* Top row */}
       <div className="flex items-start justify-between mb-3 gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -426,6 +430,7 @@ const Taches = () => {
   const [view, setView] = useState<"kanban" | "liste" | "agenda">("kanban");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("tous");
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Tache | null>(null);
 
@@ -559,24 +564,39 @@ const Taches = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {STATUTS.map(col => {
                 const cards = filtered.filter(t => t.statut === col.id);
+                const isOver = dragOverCol === col.id;
                 return (
-                  <div key={col.id} className="flex flex-col gap-3">
+                  <div
+                    key={col.id}
+                    className="flex flex-col gap-3"
+                    onDragOver={e => { e.preventDefault(); setDragOverCol(col.id); }}
+                    onDragLeave={e => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCol(null);
+                    }}
+                    onDrop={e => {
+                      e.preventDefault();
+                      const id = e.dataTransfer.getData("tache_id");
+                      if (id) updateStatut.mutate({ id, statut: col.id });
+                      setDragOverCol(null);
+                    }}
+                  >
                     {/* Column header */}
-                    <div className={cn("flex items-center justify-between px-4 py-2.5 rounded-xl border", col.header)}>
+                    <div className={cn("flex items-center justify-between px-4 py-2.5 rounded-xl border transition-all", col.header, isOver && "ring-2 ring-emerald-400 ring-offset-1")}>
                       <span className={cn("text-[11px] font-black uppercase tracking-widest", col.color.split(" ")[1])}>{col.label}</span>
                       <span className={cn("text-[10px] font-black px-1.5 py-0.5 rounded-md", col.color)}>{cards.length}</span>
                     </div>
-                    {/* Cards */}
-                    <div className="space-y-2.5">
+                    {/* Cards drop zone */}
+                    <div className={cn("space-y-2.5 min-h-[80px] rounded-xl transition-all", isOver && "bg-emerald-50/60 ring-1 ring-emerald-200 ring-dashed p-1")}>
                       {cards.length === 0 ? (
-                        <div className="text-center py-8 text-gray-300 text-xs font-medium border border-dashed border-gray-200 rounded-xl">
-                          Aucune tâche
+                        <div className={cn("text-center py-8 text-gray-300 text-xs font-medium border border-dashed border-gray-200 rounded-xl transition-all", isOver && "border-emerald-300 text-emerald-400 bg-emerald-50")}>
+                          {isOver ? "Déposer ici" : "Aucune tâche"}
                         </div>
                       ) : cards.map(t => (
                         <KanbanCard key={t.id} tache={t}
                           onEdit={() => openEdit(t)}
                           onDelete={() => deleteTache.mutate(t.id)}
-                          onStatut={s => updateStatut.mutate({ id: t.id, statut: s })} />
+                          onStatut={s => updateStatut.mutate({ id: t.id, statut: s })}
+                          onDragStart={e => { e.dataTransfer.setData("tache_id", t.id); e.dataTransfer.effectAllowed = "move"; }} />
                       ))}
                     </div>
                     {/* Quick add */}

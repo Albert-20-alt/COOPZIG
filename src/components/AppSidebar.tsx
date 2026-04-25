@@ -5,7 +5,7 @@ import {
   TrendingUp, AlertTriangle, Coins, Menu, X, LogOut,
   Inbox, MessageSquare, ShieldCheck, Settings, BookOpen,
   PiggyBank, Wallet, FileText, Activity, BarChart2, Newspaper, FolderKanban,
-  Moon, Sun, Tag, FileDown, Mail, Home, ClipboardList,
+  Moon, Sun, Tag, FileDown, Mail, Home, ClipboardList, CalendarDays,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import { useConfigValue } from "@/hooks/useSiteConfig";
 import { useMyPermissions } from "@/hooks/usePermissions";
 import { useTheme } from "@/context/ThemeContext";
 import AdminNotificationsBell from "@/components/AdminNotificationsBell";
+import UserNotificationsBell from "@/components/UserNotificationsBell";
 
 const navGroups = [
   {
@@ -70,7 +71,7 @@ const navGroups = [
   {
     label: "Communication",
     items: [
-      { to: "/admin-messages",   label: "Messages",          icon: MessageSquare, moduleKey: "messages" },
+      { to: "/admin-messages",   label: "Contact public",    icon: MessageSquare, moduleKey: "messages" },
       { to: "/admin-blog",       label: "Blog",              icon: Newspaper,     moduleKey: "blog" },
       { to: "/admin-projets",    label: "Projets",           icon: FolderKanban,  moduleKey: "projets" },
       { to: "/campagnes-email",  label: "Campagnes Email",   icon: Mail,          moduleKey: "campagnes_email" },
@@ -266,6 +267,20 @@ const AppSidebar = () => {
                 onClick={() => setMobileOpen(false)}
               />
               <NavItem
+                to="/messages"
+                label="Messagerie"
+                icon={MessageSquare}
+                isActive={location.pathname === "/messages"}
+                onClick={() => setMobileOpen(false)}
+              />
+              <NavItem
+                to="/agenda"
+                label="Agenda"
+                icon={CalendarDays}
+                isActive={location.pathname === "/agenda"}
+                onClick={() => setMobileOpen(false)}
+              />
+              <NavItem
                 to="/profil"
                 label="Mon Profil"
                 icon={Activity}
@@ -321,6 +336,7 @@ const AppSidebar = () => {
                     { to: "/gestion-prix",         label: "Page Prix",         icon: Tag },
                     { to: "/gestion-documents",    label: "Documents",         icon: FileText },
                   ]),
+                  { to: "/employes", label: "Employés (RH)", icon: Users },
                 ].map((item) => (
                   <NavItem
                     key={item.to}
@@ -338,8 +354,8 @@ const AppSidebar = () => {
         </nav>
 
         <div className="px-3 py-4 border-t border-gray-100 dark:border-[#1e2d45] space-y-2">
-          {/* Notifications bell — superadmin only */}
-          {isSuperAdmin && <AdminNotificationsBell />}
+          {/* Notifications bell */}
+          {isSuperAdmin ? <AdminNotificationsBell /> : <UserNotificationsBell />}
 
           {/* Dark mode toggle */}
           <button

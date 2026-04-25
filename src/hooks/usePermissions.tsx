@@ -31,19 +31,23 @@ export const ALL_MODULES = [
   { key: "campagnes_email",   label: "Campagnes Email",       group: "Communication" },
   { key: "taches",                  label: "Mes Tâches",                  group: "Personnel" },
   { key: "mon_espace",              label: "Mon Espace Membre",           group: "Personnel" },
+  { key: "messages_internes",       label: "Messagerie interne",          group: "Personnel" },
+  { key: "agenda",                  label: "Agenda coopératif",           group: "Personnel" },
+  { key: "employes",                label: "Gestion RH / Employés",       group: "RH" },
   { key: "producteurs_ecriture",    label: "Producteurs — Écriture",      group: "Droits d'écriture" },
   { key: "vergers_ecriture",        label: "Vergers — Écriture",          group: "Droits d'écriture" },
+  { key: "employes_ecriture",       label: "Employés — Écriture",         group: "Droits d'écriture" },
 ];
 
 // Default module access per role
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  commercial: ["dashboard", "marketplace", "commandes", "precommandes", "demandes", "logistique", "messages", "clients", "performances", "taches"],
-  marketing:  ["dashboard", "tendances", "prix_marche", "messages", "demandes", "performances", "blog", "projets", "campagnes_email", "taches"],
-  technique:  ["dashboard", "producteurs", "vergers", "recoltes", "stocks", "intelligence", "pertes", "taches"],
+  commercial: ["dashboard", "marketplace", "commandes", "precommandes", "demandes", "logistique", "messages", "clients", "performances", "taches", "messages_internes", "agenda"],
+  marketing:  ["dashboard", "tendances", "prix_marche", "messages", "demandes", "performances", "blog", "projets", "campagnes_email", "taches", "messages_internes", "agenda"],
+  technique:  ["dashboard", "producteurs", "vergers", "recoltes", "stocks", "intelligence", "pertes", "taches", "messages_internes", "agenda"],
   admin:      ALL_MODULES.filter(m => m.group !== "Droits d'écriture").map(m => m.key),
   superadmin: ALL_MODULES.map(m => m.key),
-  producteur: ["dashboard", "mon_espace", "taches"],
-  acheteur:   ["dashboard", "marketplace", "commandes", "taches"],
+  producteur: ["dashboard", "mon_espace", "taches", "messages_internes", "agenda"],
+  acheteur:   ["dashboard", "marketplace", "commandes", "taches", "messages_internes", "agenda"],
 };
 
 export type Permission = { id: string; user_id: string; module: string; can_access: boolean };

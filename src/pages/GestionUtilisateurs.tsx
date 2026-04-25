@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
@@ -293,6 +293,7 @@ const GestionUtilisateurs = () => {
   const [quickRoleUserId, setQuickRoleUserId] = useState<string | null>(null);
   const [quickRole, setQuickRole] = useState<AppRole>("commercial");
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [page, setPage] = useState(0);
   const confirm = useConfirm();
   const PAGE_SIZE = 15;
@@ -532,9 +533,17 @@ const GestionUtilisateurs = () => {
     }
   };
 
-  const filteredProfiles = profilesData?.profiles || [];
-  const totalItems = profilesData?.total || 0;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const filteredProfiles = useMemo(() => {
+    const all = profilesData?.profiles || [];
+    if (roleFilter === "all") return all;
+    const usersWithRole = new Set(
+      (userRoles || []).filter(r => r.role === roleFilter).map(r => r.user_id)
+    );
+    return all.filter(p => usersWithRole.has(p.user_id));
+  }, [profilesData, userRoles, roleFilter]);
+
+  const totalItems = roleFilter === "all" ? (profilesData?.total || 0) : filteredProfiles.length;
+  const totalPages = Math.ceil((profilesData?.total || 0) / PAGE_SIZE);
 
   const stats = {
     total:      totalItems,
@@ -627,10 +636,10 @@ const GestionUtilisateurs = () => {
                 ].map((s) => (
                   <button
                     key={s.id}
-                    onClick={() => { /* Filter logic would go here if we had a role state, but let's just use search for now or add role filter state */ }}
+                    onClick={() => { setRoleFilter(s.id); setPage(0); }}
                     className={cn(
                       "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                      searchQuery === s.id || (s.id === "all" && !searchQuery) // Simulating active for now
+                      roleFilter === s.id
                         ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
                         : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
                     )}

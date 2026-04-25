@@ -69,6 +69,9 @@ const BotUploader = lazy(() => import("./pages/BotUploader"));
 const Profil = lazy(() => import("./pages/Profil"));
 const MonEspace = lazy(() => import("./pages/MonEspace"));
 const Taches = lazy(() => import("./pages/Taches"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Agenda = lazy(() => import("./pages/Agenda"));
+const Employes = lazy(() => import("./pages/Employes"));
 
 const queryClient = new QueryClient();
 
@@ -221,6 +224,9 @@ const App = () => (
             <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
             <Route path="/mon-espace" element={<ProtectedRoute><MonEspace /></ProtectedRoute>} />
             <Route path="/taches" element={<ProtectedRoute><Taches /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+            <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
+            <Route path="/employes" element={<ProtectedRoute><Employes /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
