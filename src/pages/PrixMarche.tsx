@@ -110,7 +110,7 @@ const PrixMarche = () => {
       toast.success("Supprimé");
     },
   });
-
+  const filteredPrix = useMemo(() => {
     let filtered = prix.filter((p: any) => 
       (!search || 
         p.produit.toLowerCase().includes(search.toLowerCase()) || 
@@ -210,7 +210,6 @@ const PrixMarche = () => {
           </div>
         </div>
 
-            </div>
 
             {/* Premium Pagination Controls */}
             {totalItems > 0 && (
@@ -259,7 +258,7 @@ const PrixMarche = () => {
                 </div>
               </div>
             )}
-         </div>
+
       {/* Entry Dialog - Premium Design */}
       <Dialog open={open} onOpenChange={setOpen}>
          <DialogContent className="max-w-md p-0 rounded-[2.5rem] border border-black/[0.06] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.3)] bg-white overflow-hidden">

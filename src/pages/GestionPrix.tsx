@@ -514,11 +514,6 @@ const GestionPrix = () => {
             </div>
           )}
         </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
         {/* ── Section 3 : Relevés de marché ────────────────────────────────── */}
         <div className="bg-white dark:bg-[#0d1525] rounded-3xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-8">

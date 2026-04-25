@@ -110,136 +110,139 @@ const NewsletterTab = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-[#0d1525] rounded-2xl border border-gray-100 dark:border-[#1e2d45] overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e2d45] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-            <Bell size={18} className="text-emerald-600" />
+    <div className="space-y-4">
+      <div className="bg-white dark:bg-[#0d1525] rounded-2xl border border-gray-100 dark:border-[#1e2d45] overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e2d45] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+              <Bell size={18} className="text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Abonnés Newsletter</h2>
+              <p className="text-xs text-gray-400">{subs.length} inscription{subs.length !== 1 ? "s" : ""}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Abonnés Newsletter</h2>
-            <p className="text-xs text-gray-400">{subs.length} inscription{subs.length !== 1 ? "s" : ""}</p>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <Input
+                placeholder="Rechercher un email..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-8 h-9 w-full sm:w-64 bg-gray-50 dark:bg-white/5 border-transparent focus:bg-white dark:focus:bg-white/10 text-sm"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={subs.length === 0} className="h-9 text-xs gap-1.5 shrink-0">
+              <Download size={13} /> Exporter CSV
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-            <Input
-              placeholder="Rechercher un email..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-8 h-9 w-full sm:w-64 bg-gray-50 dark:bg-white/5 border-transparent focus:bg-white dark:focus:bg-white/10 text-sm"
-            />
+
+        {isLoading ? (
+          <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-300" size={24} /></div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Bell size={40} className="mb-3 opacity-20" />
+            <p className="text-sm">{search ? "Aucun résultat" : "Aucun abonné pour l'instant"}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={subs.length === 0} className="h-9 text-xs gap-1.5 shrink-0">
-            <Download size={13} /> Exporter CSV
-          </Button>
-        </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-white/[0.02] text-[11px] uppercase tracking-wider text-gray-400">
+                  <th className="px-6 py-3 font-medium">#</th>
+                  <th className="px-6 py-3 font-medium">Email</th>
+                  <th className="px-6 py-3 font-medium">Date d'inscription</th>
+                  <th className="px-6 py-3 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-white/[0.04]">
+                {paginated.map((sub, i) => (
+                  <tr key={sub.id} className="group hover:bg-gray-50/70 dark:hover:bg-white/[0.03] transition-colors">
+                    <td className="px-6 py-3.5 text-xs text-gray-400 font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0", avatarColor(sub.email))}>
+                          {sub.email[0].toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{sub.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <span className="text-xs text-gray-400">
+                        {format(new Date(sub.created_at), "dd MMM yyyy · HH:mm", { locale: fr })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-right">
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
+                        onClick={() => confirm({
+                          title: "Désinscrire l'abonné",
+                          description: `Voulez-vous supprimer "${sub.email}" de la liste de diffusion ?`,
+                          confirmLabel: "Supprimer", variant: "danger",
+                          onConfirm: () => deleteMutation.mutate(sub.id),
+                        })}
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 className="animate-spin text-gray-300" size={24} /></div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-          <Bell size={40} className="mb-3 opacity-20" />
-          <p className="text-sm">{search ? "Aucun résultat" : "Aucun abonné pour l'instant"}</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-white/[0.02] text-[11px] uppercase tracking-wider text-gray-400">
-                <th className="px-6 py-3 font-medium">#</th>
-                <th className="px-6 py-3 font-medium">Email</th>
-                <th className="px-6 py-3 font-medium">Date d'inscription</th>
-                <th className="px-6 py-3 font-medium text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-              {paginated.map((sub, i) => (
-                <tr key={sub.id} className="group hover:bg-gray-50/70 dark:hover:bg-white/[0.03] transition-colors">
-                  <td className="px-6 py-3.5 text-xs text-gray-400 font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0", avatarColor(sub.email))}>
-                        {sub.email[0].toUpperCase()}
-                      </div>
-                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{sub.email}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3.5">
-                    <span className="text-xs text-gray-400">
-                      {format(new Date(sub.created_at), "dd MMM yyyy · HH:mm", { locale: fr })}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-right">
-                    <Button
-                      variant="ghost" size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all"
-                      onClick={() => confirm({
-                        title: "Désinscrire l'abonné",
-                        description: `Voulez-vous supprimer "${sub.email}" de la liste de diffusion ?`,
-                        confirmLabel: "Supprimer", variant: "danger",
-                        onConfirm: () => deleteMutation.mutate(sub.id),
-                      })}
-                    >
-                      <Trash2 size={13} />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/[0.01] gap-4">
+          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            Index {(page - 1) * PAGE_SIZE + 1} – {Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} abonnés
+          </div>
+          
+          <div className="flex items-center gap-1.5">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setPage(p => Math.max(1, p - 1))} 
+              disabled={page === 1} 
+              className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+            >
+              <ChevronLeft size={16} />
+            </Button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
+              <Button
+                key={pg}
+                variant={page === pg ? "default" : "outline"}
+                onClick={() => setPage(pg)}
+                className={cn(
+                  "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                  page === pg 
+                    ? "bg-[#1A2E1C] dark:bg-emerald-800 text-white shadow-lg shadow-emerald-900/20" 
+                    : "border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10"
+                )}
+              >
+                {pg}
+              </Button>
+            ))}
+
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+              disabled={page === totalPages} 
+              className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </div>
       )}
     </div>
-
-    {totalPages > 1 && (
-      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/[0.01] gap-4">
-        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-          Index {(page - 1) * PAGE_SIZE + 1} – {Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} abonnés
-        </div>
-        
-        <div className="flex items-center gap-1.5">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setPage(p => Math.max(1, p - 1))} 
-            disabled={page === 1} 
-            className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
-          >
-            <ChevronLeft size={16} />
-          </Button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
-            <Button
-              key={pg}
-              variant={page === pg ? "default" : "outline"}
-              onClick={() => setPage(pg)}
-              className={cn(
-                "h-9 w-9 rounded-xl text-xs font-bold transition-all",
-                page === pg 
-                  ? "bg-[#1A2E1C] dark:bg-emerald-800 text-white shadow-lg shadow-emerald-900/20" 
-                  : "border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10"
-              )}
-            >
-              {pg}
-            </Button>
-          ))}
-
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
-            disabled={page === totalPages} 
-            className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
-          >
-            <ChevronRight size={16} />
-          </Button>
-        </div>
-      </div>
-    )}
-  </div>
+  );
+};
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const AdminMessages = () => {
