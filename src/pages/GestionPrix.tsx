@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Save, Loader2, Plus, Trash2, ExternalLink, ImagePlus, X } from "lucide-react";
+import { Save, Loader2, Plus, Trash2, ExternalLink, ImagePlus, X, Search, ChevronUp, ChevronDown, Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteConfig, useUpdateSiteConfig } from "@/hooks/useSiteConfig";
@@ -12,10 +12,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 
-const SectionHeader = ({ title, desc }: { title: string; desc?: string }) => (
-  <div className="border-b border-gray-100 pb-3 mb-5">
-    <h4 className="text-base font-bold text-gray-900 dark:text-gray-100">{title}</h4>
-    {desc && <p className="text-xs text-gray-400 mt-0.5">{desc}</p>}
+const SectionHeader = ({ title, desc, icon: Icon }: { title: string; desc?: string; icon?: any }) => (
+  <div className="flex items-start gap-4 mb-8">
+    {Icon && (
+      <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 border border-emerald-100/50 dark:border-emerald-800/20">
+        <Icon size={24} className="text-emerald-600 dark:text-emerald-400" />
+      </div>
+    )}
+    <div>
+      <h4 className="text-lg font-bold text-gray-900 dark:text-white leading-none">{title}</h4>
+      {desc && <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed max-w-2xl">{desc}</p>}
+    </div>
   </div>
 );
 
@@ -88,11 +95,10 @@ const GestionPrix = () => {
       <Button
         onClick={() => handleSaveKeys(keys)}
         disabled={saving}
-        className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90"
-        size="sm"
+        className="bg-[#1A2E1C] dark:bg-emerald-800 text-white hover:bg-[#1A2E1C]/90 rounded-xl h-11 px-6 shadow-lg shadow-emerald-900/20 gap-2"
       >
-        {saving ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <Save size={14} className="mr-1.5" />}
-        Enregistrer
+        {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+        Enregistrer les modifications
       </Button>
     );
   };
@@ -275,78 +281,80 @@ const GestionPrix = () => {
   return (
     <DashboardLayout
       title="Gestion de la page Prix"
-      subtitle="Modifiez le contenu, les tarifs et les relevés du marché affichés sur la page publique"
+      subtitle="Configurez le contenu public, les tarifs de la coopérative et les relevés de prix du marché"
       actions={
-        <Link
-          to="/prix"
-          target="_blank"
-          className="inline-flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-900 font-semibold border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
-        >
-          <ExternalLink size={12} />
-          Voir la page publique
-        </Link>
+        <Button asChild variant="outline" className="h-9 rounded-xl border-gray-200 dark:border-white/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all gap-2">
+          <Link to="/prix" target="_blank">
+            <ExternalLink size={14} />
+            <span className="text-xs font-bold uppercase tracking-wider">Aperçu public</span>
+          </Link>
+        </Button>
       }
     >
       <div className="space-y-6 max-w-5xl">
 
         {/* ── Section 1 : Hero ─────────────────────────────────────────────── */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0d1525] rounded-3xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-8 transition-all hover:shadow-md">
           <SectionHeader
-            title="Section Hero (bandeau vert)"
-            desc="Titre, sous-titre et statistiques affichés en haut de la page /prix"
+            title="Configuration de l'en-tête"
+            desc="Ces informations définissent le premier contact visuel des clients sur la page publique des prix. Laissez les statistiques vides pour utiliser les calculs automatiques."
+            icon={Activity}
           />
 
-          <div className="space-y-4 max-w-2xl">
-            <div className="space-y-1.5">
-              <Label>Titre principal</Label>
-              <Input
-                value={formData["prix_hero_title"] ?? ""}
-                onChange={(e) => handleChange("prix_hero_title", e.target.value)}
-                placeholder="Transparence des prix agricoles en temps réel"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Sous-titre</Label>
-              <Textarea
-                value={formData["prix_hero_subtitle"] ?? ""}
-                onChange={(e) => handleChange("prix_hero_subtitle", e.target.value)}
-                className="min-h-[80px]"
-                placeholder="Prix de vente directs proposés par la coopérative…"
-              />
-            </div>
+          <div className="space-y-6 max-w-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Titre de la page</Label>
+                <Input
+                  value={formData["prix_hero_title"] ?? ""}
+                  onChange={(e) => handleChange("prix_hero_title", e.target.value)}
+                  placeholder="Transparence des prix agricoles en temps réel"
+                  className="h-12 bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5 rounded-xl focus:ring-emerald-500/20"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Description (Sous-titre)</Label>
+                <Textarea
+                  value={formData["prix_hero_subtitle"] ?? ""}
+                  onChange={(e) => handleChange("prix_hero_subtitle", e.target.value)}
+                  className="min-h-[100px] bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5 rounded-xl focus:ring-emerald-500/20 resize-none"
+                  placeholder="Prix de vente directs proposés par la coopérative…"
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-2">
               {[
                 { key: "prix_stat_certifiees", label: "Spéculations certifiées", placeholder: "6" },
                 { key: "prix_stat_economie",   label: "Économie moyenne",         placeholder: "~12%" },
                 { key: "prix_stat_stock",      label: "Stock disponible",         placeholder: "157 t" },
                 { key: "prix_stat_zones",      label: "Zones de couverture",      placeholder: "8+" },
               ].map(({ key, label, placeholder }) => (
-                <div key={key} className="space-y-1.5">
-                  <Label className="text-xs">{label}</Label>
+                <div key={key} className="space-y-2">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</Label>
                   <Input
                     value={formData[key] ?? ""}
                     onChange={(e) => handleChange(key, e.target.value)}
                     placeholder={placeholder}
-                    className="h-8 text-sm"
+                    className="h-10 bg-gray-50/50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5 rounded-xl focus:ring-emerald-500/20"
                   />
                 </div>
               ))}
             </div>
 
-            <p className="text-[11px] text-gray-400">
-              Laisser vide = valeur calculée automatiquement depuis la base de données.
-            </p>
-
-            <SaveBtn keys={["prix_hero_title", "prix_hero_subtitle", "prix_stat_certifiees", "prix_stat_economie", "prix_stat_stock", "prix_stat_zones"]} />
+            <div className="pt-4 flex items-center justify-between border-t border-gray-100 dark:border-white/5 mt-6">
+              <p className="text-[11px] text-gray-400 font-medium italic">
+                Les modifications sont appliquées instantanément sur le site public.
+              </p>
+              <SaveBtn keys={["prix_hero_title", "prix_hero_subtitle", "prix_stat_certifiees", "prix_stat_economie", "prix_stat_stock", "prix_stat_zones"]} />
+            </div>
           </div>
         </div>
 
         {/* ── Section 2 : Produits catalogue public ────────────────────────── */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-6">
+        <div className="bg-white dark:bg-[#0d1525] rounded-3xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-8">
           <SectionHeader
-            title="Catalogue des produits publics"
-            desc="Ces produits s'affichent sur la page /prix. Cochez « visible » pour les inclure, puis modifiez les tarifs."
+            title="Catalogue des prix publics"
+            desc="Sélectionnez les produits qui apparaîtront dans la section 'Tarifs Coopérative'. Ajustez les prix pour refléter la valeur ajoutée de la coopérative."
+            icon={ExternalLink}
           />
 
           {loadingProduits ? (
@@ -374,131 +382,107 @@ const GestionPrix = () => {
                     }`}
                   >
                     {/* Header row */}
-                    <div className={`px-4 py-3 flex items-center justify-between ${
-                      p.in_ecommerce ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "bg-gray-50 dark:bg-white/[0.02]"
-                    }`}>
-                      <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "px-5 py-4 flex items-center justify-between border-b transition-colors",
+                      p.in_ecommerce 
+                        ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100/50 dark:border-emerald-800/20" 
+                        : "bg-gray-50/50 dark:bg-white/[0.01] border-gray-100 dark:border-white/5"
+                    )}>
+                      <div className="flex items-center gap-4">
                         <button
                           onClick={() => toggleEcommerce(p)}
                           disabled={isToggling}
-                          title={p.in_ecommerce ? "Retirer de la page publique" : "Afficher sur la page publique"}
-                          className={`relative w-9 h-5 rounded-full transition-colors ${
-                            p.in_ecommerce ? "bg-emerald-500" : "bg-gray-300"
-                          }`}
+                          className={cn(
+                            "relative w-11 h-6 rounded-full transition-all duration-300 shadow-inner",
+                            p.in_ecommerce ? "bg-emerald-500 shadow-emerald-500/20" : "bg-gray-200 dark:bg-white/10"
+                          )}
                         >
-                          {isToggling
-                            ? <Loader2 size={10} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin text-white" />
-                            : <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.in_ecommerce ? "translate-x-4" : "translate-x-0.5"}`} />
-                          }
+                          <div className={cn(
+                            "absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg transition-all duration-300 flex items-center justify-center",
+                            p.in_ecommerce ? "left-6" : "left-1"
+                          )}>
+                            {isToggling && <Loader2 size={8} className="animate-spin text-emerald-600" />}
+                          </div>
                         </button>
-                        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{p.nom}</span>
-                        {p.in_ecommerce
-                          ? <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">Visible</span>
-                          : <span className="text-[10px] font-medium text-gray-400 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-full">Masqué</span>
-                        }
+                        <div>
+                          <span className="font-bold text-gray-900 dark:text-white">{p.nom}</span>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                            {p.in_ecommerce ? "Activé sur le site" : "Désactivé"}
+                          </p>
+                        </div>
                       </div>
-                      {hasEdits && (
-                        <Button
-                          size="sm"
-                          onClick={() => saveProduit(p)}
-                          disabled={isSaving}
-                          className="h-7 text-xs bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90"
-                        >
-                          {isSaving ? <Loader2 size={12} className="animate-spin mr-1" /> : <Save size={12} className="mr-1" />}
-                          Enregistrer
-                        </Button>
-                      )}
+                      
+                      <div className="flex items-center gap-3">
+                        {hasEdits && (
+                          <Button
+                            size="sm"
+                            onClick={() => saveProduit(p)}
+                            disabled={isSaving}
+                            className="h-8 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/10 gap-1.5"
+                          >
+                            {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                            Sauvegarder
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Fields grid */}
-                    <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Catégorie</Label>
-                        <Input
-                          value={getProduitField(p, "categorie")}
-                          onChange={(e) => editProduit(p.id, "categorie", e.target.value)}
-                          className="h-8 text-sm"
-                          placeholder="Fruits"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Prix Coopérative (CFA/kg)</Label>
-                        <Input
-                          type="number"
-                          value={getProduitField(p, "prix_coop")}
-                          onChange={(e) => editProduit(p.id, "prix_coop", e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Prix Marché (CFA/kg)</Label>
-                        <Input
-                          type="number"
-                          value={getProduitField(p, "prix_marche")}
-                          onChange={(e) => editProduit(p.id, "prix_marche", e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Stock dispo (tonnes)</Label>
-                        <Input
-                          type="number"
-                          value={getProduitField(p, "quantite_estimee")}
-                          onChange={(e) => editProduit(p.id, "quantite_estimee", e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Saison</Label>
-                        <Input
-                          value={getProduitField(p, "saison")}
-                          onChange={(e) => editProduit(p.id, "saison", e.target.value)}
-                          className="h-8 text-sm"
-                          placeholder="Avr – Juil"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Certification / Norme</Label>
-                        <Input
-                          value={getProduitField(p, "norme_qualite")}
-                          onChange={(e) => editProduit(p.id, "norme_qualite", e.target.value)}
-                          className="h-8 text-sm"
-                          placeholder="Bio certifiée"
-                        />
-                      </div>
-                      <div className="space-y-1 col-span-2">
-                        <Label className="text-xs">Description courte</Label>
+                    <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-5">
+                      {[
+                        { label: "Catégorie", field: "categorie", placeholder: "Fruits" },
+                        { label: "Prix Coop (CFA/kg)", field: "prix_coop", type: "number" },
+                        { label: "Prix Marché (CFA/kg)", field: "prix_marche", type: "number" },
+                        { label: "Stock dispo (t)", field: "quantite_estimee", type: "number" },
+                        { label: "Saisonnalité", field: "saison", placeholder: "Juin - Oct" },
+                        { label: "Norme / Certification", field: "norme_qualite", placeholder: "Bio" },
+                      ].map((f) => (
+                        <div key={f.field} className="space-y-1.5">
+                          <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{f.label}</Label>
+                          <Input
+                            type={f.type || "text"}
+                            value={getProduitField(p, f.field)}
+                            onChange={(e) => editProduit(p.id, f.field, e.target.value)}
+                            className="h-10 bg-white dark:bg-[#131d2e] border-gray-100 dark:border-white/5 rounded-xl focus:ring-emerald-500/20 text-sm font-medium"
+                            placeholder={f.placeholder}
+                          />
+                        </div>
+                      ))}
+                      
+                      <div className="space-y-1.5 col-span-2">
+                        <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Description courte</Label>
                         <Input
                           value={getProduitField(p, "description")}
                           onChange={(e) => editProduit(p.id, "description", e.target.value)}
-                          className="h-8 text-sm"
-                          placeholder="Brève description du produit…"
+                          className="h-10 bg-white dark:bg-[#131d2e] border-gray-100 dark:border-white/5 rounded-xl focus:ring-emerald-500/20 text-sm font-medium"
+                          placeholder="Bref résumé pour le site public…"
                         />
                       </div>
 
-                      {/* Image upload */}
-                      <div className="space-y-1 col-span-2 md:col-span-4">
-                        <Label className="text-xs">Photo du produit</Label>
-                        <div className="flex items-center gap-3">
-                          {/* Preview */}
-                          {p.image_url ? (
-                            <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 shrink-0 group">
-                              <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
-                              <button
-                                onClick={() => removeProductImage(p)}
-                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                                title="Supprimer la photo"
-                              >
-                                <X size={14} className="text-white" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 bg-gray-50 dark:bg-white/[0.03]">
-                              <ImagePlus size={18} className="text-gray-300" />
-                            </div>
-                          )}
-                          {/* Upload button */}
-                          <div>
+                      {/* Image upload section */}
+                      <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-gray-50 dark:border-white/5">
+                        <div className="flex items-center gap-6">
+                          <div className="relative group/img shrink-0">
+                            {p.image_url ? (
+                              <div className="w-20 h-20 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/10 shadow-sm transition-transform group-hover/img:scale-105">
+                                <img src={p.image_url} alt={p.nom} className="w-full h-full object-cover" />
+                                <button
+                                  onClick={() => removeProductImage(p)}
+                                  className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-all duration-300"
+                                >
+                                  <X size={18} className="text-white" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/[0.02] flex items-center justify-center transition-colors group-hover/img:border-emerald-300 dark:group-hover/img:border-emerald-700">
+                                <ImagePlus size={24} className="text-gray-300 dark:text-gray-600" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <h5 className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Illustration visuelle</h5>
+                            <p className="text-[11px] text-gray-400 mb-3">Une belle image augmente la confiance des clients.</p>
                             <input
                               ref={el => { imageInputRefs.current[p.id] = el; }}
                               type="file"
@@ -511,19 +495,15 @@ const GestionPrix = () => {
                               }}
                             />
                             <Button
-                              type="button"
                               variant="outline"
                               size="sm"
-                              className="h-8 text-xs gap-1.5"
+                              className="h-9 rounded-xl border-gray-200 dark:border-white/10 hover:border-emerald-500/30 hover:text-emerald-600 transition-all gap-2 font-bold text-[11px] uppercase tracking-wider"
                               disabled={uploadingImage.includes(p.id)}
                               onClick={() => imageInputRefs.current[p.id]?.click()}
                             >
-                              {uploadingImage.includes(p.id)
-                                ? <><Loader2 size={12} className="animate-spin" /> Chargement…</>
-                                : <><ImagePlus size={12} /> {p.image_url ? "Changer la photo" : "Ajouter une photo"}</>
-                              }
+                              {uploadingImage.includes(p.id) ? <Loader2 size={12} className="animate-spin" /> : <ImagePlus size={12} />}
+                              {p.image_url ? "Mettre à jour" : "Télécharger"}
                             </Button>
-                            <p className="text-[10px] text-gray-400 mt-1">JPG, PNG ou WebP · max 5 MB</p>
                           </div>
                         </div>
                       </div>
@@ -534,123 +514,158 @@ const GestionPrix = () => {
             </div>
           )}
         </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* ── Section 3 : Relevés de marché ────────────────────────────────── */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-6">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-white dark:bg-[#0d1525] rounded-3xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <SectionHeader
-              title="Relevés de prix du marché"
-              desc="Données affichées dans le graphique d'évolution et l'historique de la page /prix"
+              title="Observatoire des prix du marché"
+              desc="Historique des relevés effectués sur les marchés régionaux. Ces données alimentent les graphiques comparatifs publics."
+              icon={Plus}
             />
             <Button
               size="sm"
-              variant="outline"
+              variant={showAddReleve ? "secondary" : "outline"}
               onClick={() => setShowAddReleve((v) => !v)}
-              className="shrink-0 -mt-5"
+              className="rounded-xl h-10 px-4 font-bold text-xs uppercase tracking-wider gap-2 shadow-sm transition-all"
             >
-              <Plus size={14} className="mr-1" />
-              {showAddReleve ? "Annuler" : "Ajouter un relevé"}
+              {showAddReleve ? <X size={14} /> : <Plus size={14} />}
+              {showAddReleve ? "Annuler" : "Nouveau relevé"}
             </Button>
           </div>
 
           {/* Add form */}
           {showAddReleve && (
-            <div className="mb-6 p-4 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl bg-emerald-50/30 dark:bg-emerald-900/10">
-              <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-400 mb-3 uppercase tracking-wider">Nouveau relevé</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Produit *</Label>
-                  <Input value={newReleve.produit} onChange={(e) => setNewReleve((r) => ({ ...r, produit: e.target.value }))} className="h-8 text-sm" placeholder="Mangue Kent" />
+            <div className="mb-10 p-6 border border-emerald-200/50 dark:border-emerald-800/20 rounded-2xl bg-emerald-50/20 dark:bg-emerald-900/10 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                <span className="text-xs font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">Saisie d'un nouveau relevé</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                {[
+                  { label: "Produit", field: "produit", placeholder: "Mangue Kent" },
+                  { label: "Marché", field: "marche", placeholder: "Ziguinchor (Escale)" },
+                  { label: "Prix", field: "prix", type: "number", placeholder: "750" },
+                  { label: "Unité", field: "unite_prix", placeholder: "CFA/kg" },
+                  { label: "Date du relevé", field: "date_releve", type: "date" },
+                ].map(f => (
+                  <div key={f.field} className="space-y-1.5">
+                    <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{f.label}</Label>
+                    <Input 
+                      type={f.type || "text"}
+                      value={(newReleve as any)[f.field]} 
+                      onChange={(e) => setNewReleve((r) => ({ ...r, [f.field]: e.target.value }))} 
+                      className="h-10 bg-white dark:bg-[#0d1525] border-gray-100 dark:border-white/5 rounded-xl text-sm font-medium" 
+                      placeholder={f.placeholder} 
+                    />
+                  </div>
+                ))}
+                
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tendance</Label>
+                  <div className="flex gap-1 p-1 bg-white dark:bg-[#0d1525] border border-gray-100 dark:border-white/5 rounded-xl h-10">
+                    {["hausse", "stable", "baisse"].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setNewReleve(r => ({ ...r, tendance: t }))}
+                        className={cn(
+                          "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                          newReleve.tendance === t 
+                            ? (t === "hausse" ? "bg-rose-500 text-white" : t === "baisse" ? "bg-emerald-500 text-white" : "bg-gray-400 text-white")
+                            : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Marché *</Label>
-                  <Input value={newReleve.marche} onChange={(e) => setNewReleve((r) => ({ ...r, marche: e.target.value }))} className="h-8 text-sm" placeholder="Ziguinchor (Escale)" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Prix *</Label>
-                  <Input type="number" value={newReleve.prix || ""} onChange={(e) => setNewReleve((r) => ({ ...r, prix: Number(e.target.value) }))} className="h-8 text-sm" placeholder="750" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Unité</Label>
-                  <Input value={newReleve.unite_prix} onChange={(e) => setNewReleve((r) => ({ ...r, unite_prix: e.target.value }))} className="h-8 text-sm" placeholder="CFA/kg" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Date</Label>
-                  <Input type="date" value={newReleve.date_releve} onChange={(e) => setNewReleve((r) => ({ ...r, date_releve: e.target.value }))} className="h-8 text-sm" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Tendance</Label>
-                  <select
-                    value={newReleve.tendance}
-                    onChange={(e) => setNewReleve((r) => ({ ...r, tendance: e.target.value }))}
-                    className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    <option value="hausse">Hausse</option>
-                    <option value="baisse">Baisse</option>
-                    <option value="stable">Stable</option>
-                  </select>
-                </div>
-                <div className="space-y-1 col-span-2 md:col-span-3">
-                  <Label className="text-xs">Source (optionnel)</Label>
-                  <Input value={newReleve.source} onChange={(e) => setNewReleve((r) => ({ ...r, source: e.target.value }))} className="h-8 text-sm" placeholder="ARM / Observatoire…" />
+
+                <div className="space-y-1.5 md:col-span-3">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Source des données</Label>
+                  <Input value={newReleve.source} onChange={(e) => setNewReleve((r) => ({ ...r, source: e.target.value }))} className="h-10 bg-white dark:bg-[#0d1525] border-gray-100 dark:border-white/5 rounded-xl text-sm font-medium" placeholder="Ex: ARM (Agence de Régulation des Marchés)" />
                 </div>
               </div>
-              <Button
-                size="sm"
-                onClick={addReleve}
-                disabled={addingReleve}
-                className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90"
-              >
-                {addingReleve ? <Loader2 size={14} className="animate-spin mr-1.5" /> : <Plus size={14} className="mr-1.5" />}
-                Ajouter
-              </Button>
+              
+              <div className="flex justify-end">
+                <Button
+                  onClick={addReleve}
+                  disabled={addingReleve}
+                  className="bg-[#1A2E1C] dark:bg-emerald-800 text-white hover:bg-[#1A2E1C]/90 h-11 px-8 rounded-xl font-bold shadow-lg shadow-emerald-900/20 gap-2"
+                >
+                  {addingReleve ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                  Enregistrer le relevé
+                </Button>
+              </div>
             </div>
           )}
 
           {/* Table */}
           {loadingReleves ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400 py-6">
-              <Loader2 size={16} className="animate-spin" /> Chargement…
+            <div className="flex justify-center py-20">
+              <Loader2 size={32} className="animate-spin text-gray-300" />
             </div>
           ) : relevés.length === 0 ? (
-            <p className="text-sm text-gray-400 py-4">Aucun relevé enregistré.</p>
+            <div className="text-center py-20 border-2 border-dashed border-gray-50 dark:border-white/5 rounded-2xl">
+               <Activity className="mx-auto text-gray-200 mb-4" size={48} />
+               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Aucun relevé dans l'historique</p>
+            </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-[#1e2d45]">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/[0.03] border-b border-gray-100 dark:border-[#1e2d45]">
-                    {["Date", "Produit", "Marché", "Prix", "Unité", "Tendance", ""].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3 first:pl-5 last:pr-5">{h}</th>
+                  <tr className="bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/5">
+                    {["Période", "Produit Agricole", "Marché", "Tarif Relevé", "Tendance", ""].map((h) => (
+                      <th key={h} className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-6 py-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-[#1e2d45]">
+                <tbody className="divide-y divide-gray-50 dark:divide-white/[0.03]">
                   {relevés.map((r) => (
-                    <tr key={r.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="px-4 py-3 pl-5 text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">{r.date_releve}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{r.produit}</td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{r.marche}</td>
-                      <td className="px-4 py-3 font-bold text-gray-900 dark:text-gray-100">{Number(r.prix).toLocaleString("fr-FR")}</td>
-                      <td className="px-4 py-3 text-gray-400">{r.unite_prix}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          r.tendance === "hausse" ? "bg-red-50 text-red-600" :
-                          r.tendance === "baisse" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {r.tendance}
-                        </span>
+                    <tr key={r.id} className="group hover:bg-gray-50/30 dark:hover:bg-white/[0.01] transition-all">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Plus size={10} className="text-emerald-500" />
+                          <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{format(new Date(r.date_releve), "dd MMM yyyy", { locale: fr })}</span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 pr-5 text-right">
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-emerald-600 transition-colors">{r.produit}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{r.marche}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm font-black text-gray-900 dark:text-white">{Number(r.prix).toLocaleString("fr-FR")}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">{r.unite_prix}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest",
+                          r.tendance === "hausse" ? "bg-rose-50 dark:bg-rose-500/10 text-rose-600" :
+                          r.tendance === "baisse" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600" : 
+                          "bg-gray-100 dark:bg-white/5 text-gray-500"
+                        )}>
+                          {r.tendance === "hausse" && <ChevronUp size={10} />}
+                          {r.tendance === "baisse" && <ChevronDown size={10} />}
+                          {r.tendance}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => deleteReleve(r.id, r.produit)}
                           disabled={deletingReleves.includes(r.id)}
-                          className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
-                          title="Supprimer"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all opacity-0 group-hover:opacity-100"
                         >
-                          {deletingReleves.includes(r.id)
-                            ? <Loader2 size={14} className="animate-spin" />
-                            : <Trash2 size={14} />
-                          }
+                          {deletingReleves.includes(r.id) ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                         </button>
                       </td>
                     </tr>

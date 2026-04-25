@@ -24,20 +24,23 @@ const CATEGORIES_SORTIES = ["Achat Intrants", "Frais Logistiques", "Salaires & M
 
 const isEntree = (categorie: string) => CATEGORIES_ENTREES.includes(categorie);
 
-const StatCard = ({ title, value, icon: Icon, variant = "default", trend }: any) => (
-  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden relative">
-    <div className="flex justify-between items-start mb-4">
+const JournalStatCard = ({ title, value, icon: Icon, variant = "default" }: any) => (
+  <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] p-5 shadow-sm relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors" />
+    <div className="flex items-center justify-between mb-4 relative z-10">
       <div className={cn(
-        "p-2.5 rounded-lg",
-        variant === "green" ? "bg-emerald-50 text-emerald-600" :
-        variant === "rose" ? "bg-rose-50 text-rose-600" :
-        "bg-blue-50 text-blue-600"
+        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+        variant === "green" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" : 
+        variant === "rose" ? "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400" : 
+        "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
       )}>
-        <Icon size={20} strokeWidth={2} />
+        <Icon size={18} strokeWidth={2.5} />
       </div>
     </div>
-    <h3 className="text-2xl font-bold text-gray-900 mb-1">{value}</h3>
-    <p className="text-sm font-medium text-gray-500">{title}</p>
+    <div className="relative z-10">
+      <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-none mb-1">{value}</h3>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+    </div>
   </div>
 );
 
@@ -162,62 +165,68 @@ const JournalComptable = () => {
     <DashboardLayout title="Grand Livre Comptable" subtitle="Historique des écritures et suivi des mouvements financiers">
       <div className="space-y-6">
 
-        {/* Action Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Registre des Écritures</h1>
-            <p className="text-sm text-gray-500 mt-1">Gérez les entrées et sorties de votre comptabilité.</p>
-          </div>
-          {isAdmin && (
-            <Button onClick={() => { resetForm(); setOpen(true); }} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
-               <Plus className="mr-2" size={16} /> Nouvelle Écriture
-            </Button>
-          )}
-        </div>
 
-        {/* Global Stats */}
+        {/* Global Stats - Quantum Editorial Style */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-           <StatCard title="Total Encaissements" value={`${(totalEntrees / 1000000).toFixed(2)}M FCFA`} icon={ArrowUpRight} variant="green" />
-           <StatCard title="Total Décaissements" value={`${(totalSorties / 1000000).toFixed(2)}M FCFA`} icon={ArrowDownRight} variant="rose" />
-           <StatCard title="Solde Comptable" value={`${(soldeNet / 1000000).toFixed(2)}M FCFA`} icon={BookOpen} variant="blue" />
+           <JournalStatCard title="Total Encaissements" value={`${(totalEntrees / 1000000).toFixed(2)}M FCFA`} icon={ArrowUpRight} variant="green" />
+           <JournalStatCard title="Total Décaissements" value={`${(totalSorties / 1000000).toFixed(2)}M FCFA`} icon={ArrowDownRight} variant="rose" />
+           <JournalStatCard title="Solde Comptable" value={`${(soldeNet / 1000000).toFixed(2)}M FCFA`} icon={BookOpen} variant="blue" />
         </div>
 
-        {/* Filters and List */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-           <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center bg-gray-50/50">
-              <div className="relative w-full sm:max-w-md">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                 <Input 
-                   placeholder="Rechercher une opération..." 
-                   value={searchTerm}
-                   onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
-                   className="pl-9 h-10 bg-white"
-                 />
-              </div>
-              <Select value={filterType} onValueChange={(v) => { setFilterType(v); setPage(0); }}>
-                <SelectTrigger className="h-10 w-full sm:w-[200px] bg-white">
-                  <SelectValue placeholder="Toutes les opérations" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les écritures</SelectItem>
-                  <SelectItem value="entrees">Encaissements uniquement</SelectItem>
-                  <SelectItem value="sorties">Décaissements uniquement</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* ── Toolbar - Quantum Unified ────────────────────────────────────────── */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+           <div className="flex gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto shrink-0">
+             {[
+               { id: "all", label: "Toutes les écritures" },
+               { id: "entrees", label: "Encaissements" },
+               { id: "sorties", label: "Décaissements" }
+             ].map((s) => (
+               <button
+                 key={s.id}
+                 onClick={() => { setFilterType(s.id); setPage(0); }}
+                 className={cn(
+                   "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                   filterType === s.id
+                     ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20"
+                     : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-white/5"
+                 )}
+               >
+                 {s.label}
+               </button>
+             ))}
            </div>
            
-           <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                 <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
-                    <tr>
-                       <th className="px-6 py-4">Date</th>
-                       <th className="px-6 py-4">Opération & Réf.</th>
-                       <th className="px-6 py-4">Catégorie</th>
-                       <th className="px-6 py-4 text-right">Montant</th>
-                       {isAdmin && <th className="px-6 py-4 text-right">Actions</th>}
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-100">
+           <div className="relative flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+              <Input 
+                placeholder="Chercher une écriture, une référence, un montant..." 
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+                className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11 text-base w-full"
+              />
+           </div>
+
+           <div className="flex items-center gap-1 px-1">
+              <Button onClick={() => { resetForm(); setOpen(true); }} className="h-10 rounded-xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 text-[10px] font-black uppercase tracking-widest gap-2 shadow-lg shadow-emerald-900/20 px-6 transition-all active:scale-95">
+                 <Plus size={14} strokeWidth={3} />
+                 Nouvelle Écriture
+              </Button>
+           </div>
+        </div>
+           
+           <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col">
+             <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                   <thead className="bg-gray-50/50 dark:bg-white/5 text-[10px] uppercase tracking-widest text-gray-400 font-black border-b border-gray-100 dark:border-[#1e2d45]">
+                      <tr>
+                         <th className="px-6 py-5">Date fiscale</th>
+                         <th className="px-6 py-5">Opération & Réf.</th>
+                         <th className="px-6 py-5">Catégorie Analytique</th>
+                         <th className="px-6 py-5 text-right">Montant</th>
+                         {isAdmin && <th className="px-6 py-5 text-right">Actions</th>}
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                     {isLoading ? (
                        <tr><td colSpan={5} className="py-12 text-center text-gray-500"><Loader2 className="animate-spin mx-auto text-emerald-600 mb-2" size={24} /> Chargement du livre...</td></tr>
                     ) : filtered.length === 0 ? (
@@ -226,27 +235,27 @@ const JournalComptable = () => {
                        filtered.map((e: any) => {
                          const entree = isEntree(e.categorie);
                          return (
-                           <tr key={e.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="px-6 py-4">
-                                 <p className="font-semibold text-gray-900">{format(new Date(e.date_ecriture), "dd/MM/yyyy")}</p>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-gray-900">{e.libelle}</p>
-                                 <p className="text-xs text-gray-500 mt-0.5">Réf: {e.numero_piece || "N/A"}</p>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <Badge variant="outline" className={cn(
-                                    "font-medium",
-                                    entree ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
-                                 )}>
-                                    {e.categorie}
-                                 </Badge>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                 <span className={cn("font-bold", entree ? "text-emerald-600" : "text-rose-600")}>
-                                    {entree ? "+" : "-"}{Number(e.montant).toLocaleString()} FCFA
-                                 </span>
-                              </td>
+                            <tr key={e.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors group">
+                               <td className="px-6 py-4">
+                                  <p className="font-bold text-gray-900 dark:text-gray-100">{format(new Date(e.date_ecriture), "dd/MM/yyyy")}</p>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <p className="font-bold text-gray-900 dark:text-gray-100">{e.libelle}</p>
+                                  <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-1">Réf: {e.numero_piece || "N/A"}</p>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <Badge variant="outline" className={cn(
+                                     "font-bold text-[10px] uppercase tracking-wider py-1 px-3 border-none",
+                                     entree ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                  )}>
+                                     {e.categorie}
+                                  </Badge>
+                               </td>
+                               <td className="px-6 py-4 text-right">
+                                  <span className={cn("font-black text-sm", entree ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                                     {entree ? "+" : "-"}{Number(e.montant).toLocaleString()} FCFA
+                                  </span>
+                               </td>
                               {isAdmin && (
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
@@ -271,25 +280,53 @@ const JournalComptable = () => {
               </table>
            </div>
 
-           {/* Pagination Controls */}
-           {totalPages > 1 && (
-             <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50/50">
-               <span className="text-sm text-gray-600">
-                  Affichage de {filtered.length} résultat(s) sur {totalItems}
-               </span>
-               <div className="flex items-center gap-2">
-                 <Button variant="outline" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="bg-white border-gray-200">
-                   <ChevronLeft size={16} className="mr-1" /> Précédent
-                 </Button>
-                 <span className="text-sm font-medium text-gray-600 px-2">
-                    Page {page + 1} sur {Math.max(1, totalPages)}
-                 </span>
-                 <Button variant="outline" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="bg-white border-gray-200">
-                   Suivant <ChevronRight size={16} className="ml-1" />
-                 </Button>
+             {/* Premium Pagination - Quantum Standard */}
+             {totalItems > 0 && (
+               <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/5 gap-4">
+                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+                   Affichage de {page * PAGE_SIZE + 1} à {Math.min((page + 1) * PAGE_SIZE, totalItems)} sur {totalItems} écritures
+                 </div>
+                 
+                 <div className="flex items-center gap-1.5">
+                   <Button 
+                     variant="outline" 
+                     size="icon"
+                     onClick={() => setPage(Math.max(0, page - 1))} 
+                     disabled={page === 0} 
+                     className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-[#1A2E1C] hover:border-[#1A2E1C]/20 transition-all shadow-sm"
+                   >
+                     <ChevronLeft size={14} />
+                   </Button>
+
+                   <div className="flex items-center gap-1.5 mx-2">
+                     {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                       <button
+                         key={p}
+                         onClick={() => setPage(p)}
+                         className={cn(
+                           "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                           page === p
+                             ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                             : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                         )}
+                       >
+                         {p + 1}
+                       </button>
+                     ))}
+                   </div>
+
+                   <Button 
+                     variant="outline" 
+                     size="icon"
+                     onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                     disabled={page >= totalPages - 1} 
+                     className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-[#1A2E1C] hover:border-[#1A2E1C]/20 transition-all shadow-sm"
+                   >
+                     <ChevronRight size={14} />
+                   </Button>
+                 </div>
                </div>
-             </div>
-           )}
+             )}
         </div>
 
       {/* Write Dialog - Premium Design */}

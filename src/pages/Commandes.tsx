@@ -34,10 +34,10 @@ const statusColors: Record<string, { cls: string; icon: any }> = {
 };
 
 const financeColors: Record<string, { cls: string; label: string; icon: any }> = {
-  "Attente Paiement": { cls: "bg-amber-50 text-amber-700", label: "Attente Flux", icon: Activity },
-  "Séquestre":        { cls: "bg-emerald-50 text-emerald-700", label: "Escrow Sécurisé", icon: Shield },
-  "Payé":             { cls: "bg-emerald-100 text-emerald-800", label: "Finalisé", icon: CheckCircle2 },
-  "Débloqué":         { cls: "bg-gray-100 text-gray-800", label: "Fonds Libérés", icon: Zap },
+  "Attente Paiement": { cls: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400", label: "Attente Flux", icon: Activity },
+  "Séquestre":        { cls: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", label: "Escrow Sécurisé", icon: Shield },
+  "Payé":             { cls: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300", label: "Finalisé", icon: CheckCircle2 },
+  "Débloqué":         { cls: "bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-gray-300", label: "Fonds Libérés", icon: Zap },
 };
 
 const StatCard = ({ title, value, icon: Icon, description, trend, variant = "default" }: any) => (
@@ -69,6 +69,7 @@ const Commandes = () => {
   const [selectedCmd, setSelectedCmd] = useState<any>(null);
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterStatut, setFilterStatut] = useState("all");
   const [page, setPage] = useState(0);
   const confirm = useConfirm();
   const PAGE_SIZE = 15;
@@ -76,6 +77,7 @@ const Commandes = () => {
   const [selectedDemande, setSelectedDemande] = useState<any>(null);
   const [demandesPage, setDemandesPage] = useState(0);
   const [demandesSearch, setDemandesSearch] = useState("");
+  const [filterDemandeStatut, setFilterDemandeStatut] = useState("all");
   const [newOrder, setNewOrder] = useState<any>({
     acheteur_id: "", client_nom: "", client_telephone: "",
     statut_paiement: "Attente Paiement", lieu_livraison: "",
@@ -146,15 +148,21 @@ const Commandes = () => {
   });
 
   const { data: demandesData, isLoading: demandesLoading } = useQuery({
-    queryKey: ["demandes-commandes-tab", demandesPage, demandesSearch],
+    queryKey: ["demandes-commandes-tab", demandesPage, demandesSearch, filterDemandeStatut],
     queryFn: async () => {
       let q = supabase
         .from("demandes")
         .select("*", { count: "exact" })
         .order("created_at", { ascending: false });
+      
       if (demandesSearch) {
         q = q.or(`nom_complet.ilike.%${demandesSearch}%,email.ilike.%${demandesSearch}%,produit.ilike.%${demandesSearch}%`);
       }
+      
+      if (filterDemandeStatut !== "all") {
+        q = q.eq("statut", filterDemandeStatut);
+      }
+
       const from = demandesPage * PAGE_SIZE;
       const { data, count, error } = await q.range(from, from + PAGE_SIZE - 1);
       if (error) throw error;
@@ -286,17 +294,17 @@ const Commandes = () => {
       <div className="space-y-6">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#131d2e] p-6 rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ordres d'achat</h1>
-            <p className="text-sm text-gray-500 mt-1">Gérez le volume d'affaires de {(totalMontant/1000000).toFixed(1)}M CFA avec traçabilité Escrow.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Ordres d'achat</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gérez le volume d'affaires de {(totalMontant/1000000).toFixed(1)}M CFA avec traçabilité Escrow.</p>
           </div>
           <div className="flex items-center gap-3">
-             <Button variant="outline" className="bg-white">
+             <Button variant="outline" className="bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">
                 <Receipt className="mr-2" size={16}/> Exporter Ledger
              </Button>
             {isAdmin && (
-              <Button onClick={() => setIsNewOrderOpen(true)} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
+              <Button onClick={() => setIsNewOrderOpen(true)} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 shadow-lg shadow-emerald-900/10">
                 <Plus className="mr-2" size={16} />
                 Nouvelle Commande
               </Button>
@@ -313,16 +321,16 @@ const Commandes = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab("commandes")}
-            className={cn("flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all", activeTab === "commandes" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+            className={cn("flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all", activeTab === "commandes" ? "bg-white dark:bg-[#1e2d45] text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300")}
           >
             <ShoppingCart size={15} /> Commandes internes
           </button>
           <button
             onClick={() => setActiveTab("demandes")}
-            className={cn("flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all", activeTab === "demandes" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+            className={cn("flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all", activeTab === "demandes" ? "bg-white dark:bg-[#1e2d45] text-gray-900 dark:text-white shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300")}
           >
             <Globe size={15} /> Demandes site web
             {(demandesNewCount as number) > 0 && (
@@ -335,16 +343,41 @@ const Commandes = () => {
 
         {activeTab === "demandes" ? (
           <>
-            {/* Demandes search */}
-            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-              <div className="relative w-full sm:w-96">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            {/* Demandes Search & Filters - Quantum Standard */}
+            <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                 <Input
                   placeholder="Chercher nom, email, produit..."
                   value={demandesSearch}
                   onChange={(e) => { setDemandesSearch(e.target.value); setDemandesPage(0); }}
-                  className="pl-10 h-10 rounded-lg border-gray-200 w-full"
+                  className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
                 />
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2 p-1">
+                <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto max-w-[600px]">
+                  {[
+                    { id: "all", label: "Tous" },
+                    { id: "Nouvelle", label: "Nouvelles" },
+                    { id: "En cours", label: "En cours" },
+                    { id: "Traitée", label: "Traitées" },
+                    { id: "Annulée", label: "Annulées" }
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => { setFilterDemandeStatut(s.id); setDemandesPage(0); }}
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                        filterDemandeStatut === s.id
+                          ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                          : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -352,10 +385,10 @@ const Commandes = () => {
             {demandesLoading ? (
               <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>
             ) : (
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+                    <thead className="bg-gray-50/50 dark:bg-white/5 text-[10px] uppercase tracking-widest text-gray-400 font-black border-b border-gray-100 dark:border-[#1e2d45]">
                       <tr>
                         <th className="px-6 py-4">Date</th>
                         <th className="px-6 py-4">Client</th>
@@ -365,7 +398,7 @@ const Commandes = () => {
                         <th className="px-6 py-4 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                       {(demandesData?.demandes || []).length === 0 ? (
                         <tr><td colSpan={6} className="py-16 text-center">
                           <Inbox className="mx-auto mb-3 text-gray-300" size={32} />
@@ -375,22 +408,22 @@ const Commandes = () => {
                       ) : (demandesData?.demandes || []).map((d: any) => {
                         const isNew = d.statut === "Nouvelle";
                         return (
-                          <tr key={d.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setSelectedDemande(d)}>
+                          <tr key={d.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group" onClick={() => setSelectedDemande(d)}>
                             <td className="px-6 py-4">
-                              <div className="text-xs text-gray-500">{d.created_at ? format(new Date(d.created_at), "dd MMM yyyy", { locale: fr }) : "—"}</div>
-                              <div className="text-[10px] text-gray-400 font-mono mt-0.5">#{d.id.slice(0,8).toUpperCase()}</div>
+                              <div className="text-[11px] font-bold text-gray-900 dark:text-gray-100">{d.created_at ? format(new Date(d.created_at), "dd MMM yyyy", { locale: fr }) : "—"}</div>
+                              <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">#{d.id.slice(0,8)}</div>
+                            </td>
+                             <td className="px-6 py-4">
+                              <div className="font-bold text-gray-900 dark:text-gray-100">{d.nom_complet}</div>
+                              {d.entreprise && <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{d.entreprise}</div>}
                             </td>
                             <td className="px-6 py-4">
-                              <div className="font-semibold text-gray-900">{d.nom_complet}</div>
-                              {d.entreprise && <div className="text-xs text-gray-500 mt-0.5">{d.entreprise}</div>}
+                              <div className="font-bold text-gray-900 dark:text-gray-100">{d.produit}</div>
+                              <div className="text-[11px] font-black text-emerald-600 mt-0.5">{d.quantite} {d.unite}</div>
                             </td>
                             <td className="px-6 py-4">
-                              <div className="font-medium text-gray-900">{d.produit}</div>
-                              <div className="text-xs font-semibold text-emerald-600 mt-0.5">{d.quantite} {d.unite}</div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-xs text-gray-600">{d.email}</div>
-                              <div className="text-xs text-gray-500 mt-0.5">{d.telephone}</div>
+                              <div className="text-[11px] font-bold text-gray-600 dark:text-gray-400">{d.email}</div>
+                              <div className="text-[10px] font-medium text-gray-400 mt-0.5">{d.telephone}</div>
                             </td>
                             <td className="px-6 py-4">
                               <Badge variant="outline" className={cn("border-none font-semibold text-xs", isNew ? "bg-blue-50 text-blue-700" : d.statut === "Traitée" ? "bg-emerald-50 text-emerald-700" : d.statut === "Annulée" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700")}>
@@ -416,13 +449,49 @@ const Commandes = () => {
                     </tbody>
                   </table>
                 </div>
-                {(demandesData?.total || 0) > PAGE_SIZE && (
-                  <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50/50">
-                    <span className="text-sm text-gray-600">{demandesData?.demandes.length} / {demandesData?.total} résultats</span>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setDemandesPage(p => Math.max(0, p - 1))} disabled={demandesPage === 0} className="bg-white border-gray-200"><ChevronLeft size={16} className="mr-1" />Précédent</Button>
-                      <span className="text-sm font-medium text-gray-600 px-2">Page {demandesPage + 1}</span>
-                      <Button variant="outline" size="sm" onClick={() => setDemandesPage(p => p + 1)} disabled={(demandesPage + 1) * PAGE_SIZE >= (demandesData?.total || 0)} className="bg-white border-gray-200">Suivant<ChevronRight size={16} className="ml-1" /></Button>
+                {/* Premium Pagination for Demandes */}
+                {(demandesData?.total || 0) > 0 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/5 gap-4">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+                      Affichage de {demandesPage * PAGE_SIZE + 1} à {Math.min((demandesPage + 1) * PAGE_SIZE, demandesData?.total || 0)} sur {demandesData?.total} demandes
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={() => setDemandesPage(p => Math.max(0, p - 1))} 
+                        disabled={demandesPage === 0} 
+                        className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                      >
+                        <ChevronLeft size={14} />
+                      </Button>
+                      
+                      <div className="flex items-center gap-1.5 mx-2">
+                        {Array.from({ length: Math.ceil((demandesData?.total || 0) / PAGE_SIZE) }, (_, i) => i).map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setDemandesPage(p)}
+                            className={cn(
+                              "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                              demandesPage === p
+                                ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                                : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                            )}
+                          >
+                            {p + 1}
+                          </button>
+                        ))}
+                      </div>
+
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={() => setDemandesPage(p => p + 1)} 
+                        disabled={(demandesPage + 1) * PAGE_SIZE >= (demandesData?.total || 0)} 
+                        className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                      >
+                        <ChevronRight size={14} />
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -431,18 +500,40 @@ const Commandes = () => {
           </>
         ) : (
           <>
-        {/* Search */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <Input
-              placeholder="Chercher client, référence..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 h-10 rounded-lg border-gray-200 w-full"
-            />
-          </div>
-        </div>
+            {/* Commandes Search & Filters - Quantum Standard */}
+            <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+                <Input
+                  placeholder="Chercher client, référence, produit..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                  className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
+                />
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2 p-1">
+                <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto max-w-[600px]">
+                  {[
+                    { id: "all", label: "Tous" },
+                    ...Object.keys(statusColors).map(s => ({ id: s, label: s }))
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => { setFilterStatut(s.id); setPage(0); }}
+                      className={cn(
+                        "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                        filterStatut === s.id
+                          ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                          : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
         {/* Orders Table */}
         {isLoading ? (
@@ -450,10 +541,10 @@ const Commandes = () => {
              <Loader2 className="animate-spin text-emerald-600" size={32} />
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col">
              <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                   <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+                   <thead className="bg-gray-50/50 dark:bg-white/5 text-[10px] uppercase tracking-widest text-gray-400 font-black border-b border-gray-100 dark:border-[#1e2d45]">
                       <tr>
                          <th className="px-6 py-4">Réf & Date</th>
                          <th className="px-6 py-4">Client</th>
@@ -464,7 +555,7 @@ const Commandes = () => {
                          <th className="px-6 py-4 text-right">Actions</th>
                       </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-100">
+                   <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                       {filtered.length === 0 ? (
                          <tr><td colSpan={7} className="py-12 text-center text-gray-500">Aucune commande.</td></tr>
                       ) : (
@@ -476,32 +567,32 @@ const Commandes = () => {
                           return (
                             <tr 
                               key={c.id} 
-                              className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                              className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group"
                               onClick={() => setSelectedCmd(c)}
                             >
                                <td className="px-6 py-4">
-                                  <div className="font-mono text-xs font-bold text-gray-900">#{c.id.slice(0,8).toUpperCase()}</div>
-                                  <div className="text-xs text-gray-500 mt-1">{c.created_at ? format(new Date(c.created_at), "dd MMM yyyy", { locale: fr }) : "—"}</div>
+                                  <div className="text-[11px] font-bold text-gray-900 dark:text-gray-100 uppercase">ORD-{c.id.slice(0,8)}</div>
+                                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-1">{c.created_at ? format(new Date(c.created_at), "dd MMM yyyy", { locale: fr }) : "—"}</div>
                                </td>
                                <td className="px-6 py-4">
-                                  <div className="font-bold text-gray-900">{buyers.find((b:any)=>b.id === c.acheteur_id)?.entreprise || buyers.find((b:any)=>b.id === c.acheteur_id)?.full_name || c.client_nom || "Client Invité"}</div>
-                                  <div className="text-xs text-gray-500 mt-0.5">{c.acheteur_id ? c.acheteur_id.substring(0,6).toUpperCase() : (c.client_telephone || "Sans contact")}</div>
+                                  <div className="font-bold text-gray-900 dark:text-gray-100">{buyers.find((b:any)=>b.id === c.acheteur_id)?.entreprise || buyers.find((b:any)=>b.id === c.acheteur_id)?.full_name || c.client_nom || "Client Invité"}</div>
+                                  <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{c.acheteur_id ? "Compte Partenaire" : (c.client_telephone || "Sans contact")}</div>
                                 </td>
                                <td className="px-6 py-4">
-                                  <div className="font-medium text-gray-900">{c.produit_nom}</div>
-                                  <div className="text-xs font-semibold text-gray-500 mt-0.5">{c.quantite} {c.unite}</div>
+                                  <div className="font-bold text-gray-900 dark:text-gray-100">{c.produit_nom}</div>
+                                  <div className="text-[11px] font-black text-emerald-600 mt-0.5">{c.quantite} {c.unite}</div>
                                </td>
-                               <td className="px-6 py-4 font-bold text-emerald-700">
+                               <td className="px-6 py-4 font-black text-emerald-700 dark:text-emerald-400">
                                   {(c.montant || 0).toLocaleString()} CFA
                                </td>
                                <td className="px-6 py-4">
-                                  <Badge variant="outline" className={cn("border-none gap-1 font-semibold", scfg.cls)}>
-                                     <SIcon size={12} /> {c.statut}
+                                  <Badge variant="outline" className={cn("border-none gap-1 font-bold text-[10px] uppercase tracking-wider py-1 px-3", scfg.cls)}>
+                                     <SIcon size={10} /> {c.statut}
                                   </Badge>
                                </td>
                                <td className="px-6 py-4">
-                                  <Badge variant="outline" className={cn("border-none gap-1 font-semibold", fcfg.cls)}>
-                                     <FIcon size={12} /> {fcfg.label}
+                                  <Badge variant="outline" className={cn("border-none gap-1 font-bold text-[10px] uppercase tracking-wider py-1 px-3", fcfg.cls)}>
+                                     <FIcon size={10} /> {fcfg.label}
                                   </Badge>
                                </td>
                                <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
@@ -532,21 +623,49 @@ const Commandes = () => {
                 </table>
              </div>
 
-            {/* Pagination Controls */}
-            {totalPages >= 1 && (
-              <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50/50">
-                <span className="text-sm text-gray-600">
-                   Affichage de {commandes.length} résultat(s) sur {totalItems}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="bg-white border-gray-200">
-                    <ChevronLeft size={16} className="mr-1" /> Précédent
+            {/* Premium Pagination for Commandes */}
+            {totalItems > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/5 gap-4">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+                  Affichage de {page * PAGE_SIZE + 1} à {Math.min((page + 1) * PAGE_SIZE, totalItems)} sur {totalItems} transactions
+                </div>
+                
+                <div className="flex items-center gap-1.5">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setPage(Math.max(0, page - 1))} 
+                    disabled={page === 0} 
+                    className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronLeft size={14} />
                   </Button>
-                  <span className="text-sm font-medium text-gray-600 px-2">
-                     Page {page + 1} sur {Math.max(1, totalPages)}
-                  </span>
-                  <Button variant="outline" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="bg-white border-gray-200">
-                    Suivant <ChevronRight size={16} className="ml-1" />
+
+                  <div className="flex items-center gap-1.5 mx-2">
+                    {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={cn(
+                          "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                          page === p
+                            ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                            : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                        )}
+                      >
+                        {p + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                    disabled={page >= totalPages - 1} 
+                    className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronRight size={14} />
                   </Button>
                 </div>
               </div>

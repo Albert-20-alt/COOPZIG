@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { 
-  Plus, Edit, Trash2, Loader2, Package, Award, 
+import {
+  Plus, Edit, Trash2, Loader2, Package, Award,
   TrendingUp, Search, Calendar, Leaf, Droplets,
-  MapPin, Gauge, Target
+  MapPin, Gauge, Target, ChevronLeft, ChevronRight, CalendarDays, ChevronDown, ChevronUp
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -62,6 +62,9 @@ const Recoltes = () => {
   const [openForm, setOpenForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [qualiteFilter, setQualiteFilter] = useState("tous");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const confirm = useConfirm();
 
   const [formData, setFormData] = useState({
@@ -153,6 +156,64 @@ const Recoltes = () => {
     onError: (e: Error) => toast.error("Erreur: " + e.message)
   });
 
+  // ── Calendrier production state ──────────────────────────────────────────
+  const [calOpen, setCalOpen] = useState(false);
+  const [calFormOpen, setCalFormOpen] = useState(false);
+  const [calEditId, setCalEditId] = useState<string | null>(null);
+  const [calForm, setCalForm] = useState({ produit: "", mois: "Janvier", niveau: "Faible", zone: "", annee: new Date().getFullYear().toString() });
+
+  const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  const NIVEAUX = ["Faible","Moyen","Élevé","Très élevé"];
+
+  const { data: calendrier = [] } = useQuery({
+    queryKey: ["calendrier_production"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("calendrier_production").select("*").order("produit").order("annee", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const calUpsert = useMutation({
+    mutationFn: async () => {
+      const payload = { produit: calForm.produit, mois: calForm.mois, niveau: calForm.niveau, zone: calForm.zone || null, annee: Number(calForm.annee) || null };
+      if (calEditId) {
+        const { error } = await supabase.from("calendrier_production").update(payload).eq("id", calEditId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("calendrier_production").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendrier_production"] });
+      toast.success(calEditId ? "Entrée mise à jour" : "Entrée ajoutée");
+      setCalFormOpen(false); setCalEditId(null);
+      setCalForm({ produit: "", mois: "Janvier", niveau: "Faible", zone: "", annee: new Date().getFullYear().toString() });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const calDelete = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("calendrier_production").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["calendrier_production"] }); toast.success("Supprimé"); },
+  });
+
+  const openCalEdit = (c: any) => {
+    setCalForm({ produit: c.produit, mois: c.mois, niveau: c.niveau, zone: c.zone || "", annee: String(c.annee || new Date().getFullYear()) });
+    setCalEditId(c.id); setCalFormOpen(true);
+  };
+
+  const niveauColor = (n: string) => {
+    if (n === "Très élevé") return "bg-emerald-100 text-emerald-700";
+    if (n === "Élevé") return "bg-blue-100 text-blue-700";
+    if (n === "Moyen") return "bg-amber-100 text-amber-700";
+    return "bg-gray-100 text-gray-600";
+  };
+
   const handleEdit = (r: RecolteItem) => {
     setFormData({ producteur_id: r.producteur_id, verger_id: r.verger_id, produit: r.produit, quantite: r.quantite.toString(), unite: r.unite || "T", qualite: r.qualite || "Export", date_disponibilite: r.date_disponibilite || new Date().toISOString().split("T")[0] });
     setEditingId(r.id); setOpenForm(true);
@@ -163,21 +224,29 @@ const Recoltes = () => {
     setFormData({ producteur_id: "", verger_id: "", produit: "Mangue Kent", quantite: "", unite: "T", qualite: "Export", date_disponibilite: new Date().toISOString().split("T")[0] });
   };
 
-  const filtered = (recoltes || []).filter(r =>
-    !search || r.produit.toLowerCase().includes(search.toLowerCase()) ||
-    (r.producteurs?.nom || "").toLowerCase().includes(search.toLowerCase()) ||
-    (r.vergers?.nom || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = (recoltes || []).filter(r => {
+    const matchesSearch = !search || 
+      r.produit.toLowerCase().includes(search.toLowerCase()) ||
+      (r.producteurs?.nom || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.vergers?.nom || "").toLowerCase().includes(search.toLowerCase());
+    
+    const matchesQualite = qualiteFilter === "tous" || r.qualite === qualiteFilter;
+    
+    return matchesSearch && matchesQualite;
+  });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <DashboardLayout title="Récoltes" subtitle="Suivi des flux de production et volumes collectés">
       <div className="space-y-6">
 
         {/* Clean Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#131d2e] p-6 rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm">
           <div>
-             <h1 className="text-2xl font-bold text-gray-900">Registre des récoltes</h1>
-             <p className="text-sm text-gray-500 mt-1">Gérez et déclarez les entrées de production agrégées.</p>
+             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Registre des récoltes</h1>
+             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gérez et déclarez les entrées de production agrégées.</p>
           </div>
           {isAdmin && (
             <Button onClick={() => setOpenForm(true)} className="bg-emerald-600 text-white hover:bg-emerald-700">
@@ -195,16 +264,37 @@ const Recoltes = () => {
           <StatCard title="Contributeurs" value={kpis.nbProducteurs} icon={TrendingUp} description="Actifs ce mois" variant="gold" />
         </div>
 
-        {/* Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <Input 
-              placeholder="Rechercher produit, membre, verger..." 
+        {/* Search & Filters - Quantum Standard */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+            <Input
+              placeholder="Rechercher produit, membre, verger..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 h-10 rounded-lg border-gray-200 w-full"
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
             />
+          </div>
+          <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto">
+            {[
+              { id: "tous", label: "Tous" },
+              { id: "Export", label: "Export" },
+              { id: "Local", label: "Local" },
+              { id: "Transformation", label: "Transform." }
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => { setQualiteFilter(s.id); setCurrentPage(1); }}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  qualiteFilter === s.id
+                    ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -214,28 +304,28 @@ const Recoltes = () => {
              <Loader2 className="animate-spin text-emerald-600" size={32} />
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+                <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 font-medium border-b border-gray-100 dark:border-white/5 uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="px-6 py-4">Membre & Produit</th>
                     <th className="px-6 py-4">Site (Verger)</th>
                     <th className="px-6 py-4">Volume</th>
-                    <th className="px-6 py-4">Qualité</th>
+                    <th className="px-6 py-4 text-center">Qualité</th>
                     <th className="px-6 py-4">Date de dispo.</th>
                     {isAdmin && <th className="px-6 py-4 text-right">Actions</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filtered.map((r) => {
+                <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                  {paginatedData.map((r) => {
                     const qcfg = qualiteConfig[r.qualite] || { bg: "bg-gray-100", text: "text-gray-700", label: r.qualite, icon: Package };
                     return (
                       <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
-                             <span className="font-bold text-gray-900">{r.producteurs?.nom || "—"}</span>
-                             <span className="text-gray-500 text-xs mt-0.5">{r.produit}</span>
+                             <span className="font-bold text-gray-900 dark:text-gray-100">{r.producteurs?.nom || "—"}</span>
+                             <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{r.produit}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -245,11 +335,11 @@ const Recoltes = () => {
                            </div>
                         </td>
                         <td className="px-6 py-4">
-                           <span className="font-bold text-gray-900 text-base">{r.quantite}</span>
-                           <span className="text-gray-500 text-xs ml-1">{r.unite}</span>
+                           <span className="font-bold text-gray-900 dark:text-gray-100 text-base">{r.quantite}</span>
+                           <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">{r.unite}</span>
                         </td>
-                        <td className="px-6 py-4">
-                           <Badge className={cn("px-2.5 py-1 rounded-md text-xs font-semibold border-none gap-1.5 whitespace-nowrap", qcfg.bg, qcfg.text)}>
+                        <td className="px-6 py-4 text-center">
+                           <Badge className={cn("px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border-none gap-1.5 whitespace-nowrap", qcfg.bg, qcfg.text)}>
                              {r.qualite}
                            </Badge>
                         </td>
@@ -288,9 +378,187 @@ const Recoltes = () => {
                 </div>
               )}
             </div>
+
+            {/* Premium Quantum Pagination */}
+            {filtered.length > PAGE_SIZE && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/5 gap-4">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+                  Affichage de {(currentPage - 1) * PAGE_SIZE + 1} à {Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length} déclarations
+                </div>
+                
+                <div className="flex items-center gap-1.5">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                    disabled={currentPage === 1} 
+                    className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronLeft size={14} />
+                  </Button>
+
+                  <div className="flex items-center gap-1.5 mx-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
+                      <button
+                        key={pg}
+                        onClick={() => setCurrentPage(pg)}
+                        className={cn(
+                          "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                          currentPage === pg 
+                            ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                            : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                        )}
+                      >
+                        {pg}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                    disabled={currentPage === totalPages} 
+                    className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* ── Calendrier de Production ───────────────────────────────────── */}
+      {isAdmin && (
+        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden">
+          {/* Header — collapsible */}
+          <button
+            type="button"
+            onClick={() => setCalOpen(o => !o)}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <CalendarDays size={18} className="text-emerald-600" />
+              <div className="text-left">
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">Calendrier de Production</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{calendrier.length} entrée(s) — Saisons et niveaux par produit</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={e => { e.stopPropagation(); setCalEditId(null); setCalForm({ produit: "", mois: "Janvier", niveau: "Faible", zone: "", annee: new Date().getFullYear().toString() }); setCalFormOpen(true); }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-8 px-3 text-xs font-bold"
+              >
+                <Plus size={13} className="mr-1" /> Ajouter
+              </Button>
+              {calOpen ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+            </div>
+          </button>
+
+          {/* Table */}
+          {calOpen && (
+            <div className="border-t border-gray-100 dark:border-[#1e2d45] overflow-x-auto">
+              {calendrier.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <Calendar size={32} className="mb-3 opacity-30" />
+                  <p className="text-sm font-medium">Aucune entrée de calendrier</p>
+                  <p className="text-xs text-gray-400 mt-1">Ajoutez les périodes de production pour la page publique</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 uppercase tracking-wider text-[10px] font-medium border-b border-gray-100 dark:border-white/5">
+                    <tr>
+                      <th className="px-6 py-3">Produit</th>
+                      <th className="px-6 py-3">Mois</th>
+                      <th className="px-6 py-3">Niveau</th>
+                      <th className="px-6 py-3">Zone</th>
+                      <th className="px-6 py-3">Année</th>
+                      <th className="px-6 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                    {calendrier.map((c: any) => (
+                      <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">{c.produit}</td>
+                        <td className="px-6 py-3 text-gray-600 dark:text-gray-400">{c.mois}</td>
+                        <td className="px-6 py-3">
+                          <span className={cn("px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest", niveauColor(c.niveau))}>
+                            {c.niveau}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{c.zone || "—"}</td>
+                        <td className="px-6 py-3 text-gray-500 dark:text-gray-400">{c.annee || "—"}</td>
+                        <td className="px-6 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button size="icon" variant="ghost" onClick={() => openCalEdit(c)} className="h-8 w-8 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50">
+                              <Edit size={14} />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => confirm({ title: "Supprimer cette entrée ?", description: `"${c.produit}" en ${c.mois}`, confirmLabel: "Supprimer", variant: "danger", onConfirm: () => calDelete.mutate(c.id) })} className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50">
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Calendrier Form Dialog */}
+      <Dialog open={calFormOpen} onOpenChange={v => { if (!v) { setCalFormOpen(false); setCalEditId(null); } }}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>{calEditId ? "Modifier l'entrée" : "Ajouter au calendrier"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={e => { e.preventDefault(); calUpsert.mutate(); }} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Produit *</Label>
+              <Input required value={calForm.produit} onChange={e => setCalForm(f => ({ ...f, produit: e.target.value }))} placeholder="ex: Mangue Kent" className="h-10 rounded-xl" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mois *</Label>
+                <Select value={calForm.mois} onValueChange={v => setCalForm(f => ({ ...f, mois: v }))}>
+                  <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>{MOIS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Niveau *</Label>
+                <Select value={calForm.niveau} onValueChange={v => setCalForm(f => ({ ...f, niveau: v }))}>
+                  <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>{NIVEAUX.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Zone</Label>
+                <Input value={calForm.zone} onChange={e => setCalForm(f => ({ ...f, zone: e.target.value }))} placeholder="ex: Bignona" className="h-10 rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Année</Label>
+                <Input type="number" value={calForm.annee} onChange={e => setCalForm(f => ({ ...f, annee: e.target.value }))} className="h-10 rounded-xl" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" onClick={() => { setCalFormOpen(false); setCalEditId(null); }}>Annuler</Button>
+              <Button type="submit" disabled={calUpsert.isPending} className="bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl">
+                {calUpsert.isPending && <Loader2 className="animate-spin mr-2" size={15} />}
+                {calEditId ? "Mettre à jour" : "Ajouter"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Form Dialog - Premium Design */}
       <Dialog open={openForm} onOpenChange={v => !v ? closeForm() : setOpenForm(true)}>

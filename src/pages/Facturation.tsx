@@ -36,44 +36,32 @@ const statutConfig: Record<string, { label: string; bg: string; text: string; ic
   "Annulée":   { label: "Annulée", bg: "bg-gray-100/80",  text: "text-gray-500", border: "border-gray-200", icon: X },
 };
 
-const StatCard = ({ title, value, icon: Icon, variant = "default" }: any) => {
-  const isEmerald = variant === "green";
-  const isRose = variant === "rose";
-  const isBlue = variant === "blue";
-  
-  return (
-    <div className="group bg-white rounded-3xl border border-gray-100 shadow-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/50 hover:-translate-y-1 relative overflow-hidden">
-      {/* Decorative gradient background */}
+const FinanceStatCard = ({ title, value, icon: Icon, variant = "default", onClick }: any) => (
+  <div 
+    onClick={onClick}
+    className={cn(
+      "bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] p-6 shadow-sm relative overflow-hidden group transition-all duration-300",
+      onClick ? "cursor-pointer hover:shadow-xl hover:shadow-emerald-950/5 active:scale-95" : ""
+    )}
+  >
+    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors" />
+    <div className="flex items-center justify-between mb-4 relative z-10">
       <div className={cn(
-        "absolute -right-8 -top-8 w-32 h-32 rounded-full blur-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-10",
-        isEmerald ? "bg-emerald-500" : isRose ? "bg-rose-500" : isBlue ? "bg-blue-500" : "bg-gray-500"
-      )} />
-      
-      <div className="flex justify-between items-start mb-5">
-        <div className={cn(
-          "p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
-          isEmerald ? "bg-emerald-50 text-emerald-600" :
-          isRose ? "bg-rose-50 text-rose-600" :
-          isBlue ? "bg-blue-50 text-blue-600" :
-          "bg-gray-50 text-gray-600"
-        )}>
-          <Icon size={24} strokeWidth={1.5} />
-        </div>
-        <div className="h-1.5 w-12 bg-gray-50 rounded-full overflow-hidden self-center ml-auto mr-0">
-          <div className={cn(
-            "h-full rounded-full transition-all duration-1000 w-2/3 group-hover:w-full",
-            isEmerald ? "bg-emerald-500" : isRose ? "bg-rose-500" : "bg-blue-500"
-          )} />
-        </div>
-      </div>
-      
-      <div className="space-y-1">
-        <h3 className="text-3xl font-black text-gray-900 tracking-tight">{value}</h3>
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{title}</p>
+        "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+        variant === "green" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" : 
+        variant === "rose" ? "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400" : 
+        variant === "blue" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400" :
+        "bg-gray-50 text-gray-600 dark:bg-white/5 dark:text-gray-400"
+      )}>
+        <Icon size={22} strokeWidth={2.5} />
       </div>
     </div>
-  );
-};
+    <div className="relative z-10">
+      <h3 className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-none mb-1">{value}</h3>
+      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+    </div>
+  </div>
+);
 
 const Facturation = () => {
   const { user } = useAuth();
@@ -84,6 +72,8 @@ const Facturation = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [statutFilter, setStatutFilter] = useState("Tous");
+  const [typeFilter, setTypeFilter] = useState("Facture");
   const confirm = useConfirm();
   const PAGE_SIZE = 15;
   const [viewFacture, setViewFacture] = useState<any>(null);
@@ -123,9 +113,18 @@ const Facturation = () => {
   });
 
   const { data: listData, isLoading } = useQuery({
-    queryKey: ["factures-list", page, search],
+    queryKey: ["factures-list", page, search, typeFilter, statutFilter],
     queryFn: async () => {
       let q = supabase.from("factures").select("*", { count: "exact" }).order("date_facture", { ascending: false });
+      
+      if (typeFilter !== "Tous") {
+        q = q.eq("type", typeFilter);
+      }
+      
+      if (statutFilter !== "Tous") {
+        q = q.eq("statut", statutFilter);
+      }
+
       if (search) {
         q = q.or(`numero_facture.ilike.%${search}%,client_nom.ilike.%${search}%`);
       }
@@ -254,116 +253,191 @@ const Facturation = () => {
           <p className="text-gray-400 font-medium max-w-lg">Gérez vos transactions financières avec une précision institutionnelle.</p>
         </div>
 
-        {/* Global Stats */}
+        {/* Global Stats - Quantum Editorial Style */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-           <StatCard title="Total Encaissé" value={`${(kpis.totalPaye / 1000000).toFixed(2)}M`} icon={CheckCircle2} variant="green" />
-           <StatCard title="Encours Clients" value={`${(kpis.totalImpaye / 1000000).toFixed(2)}M`} icon={Clock} variant="rose" />
-           <StatCard title="Total Emis" value={kpis.count} icon={FileText} variant="blue" />
-           <StatCard title="Brouillons" value={kpis.brouillons} icon={FileText} />
+           <FinanceStatCard 
+              title="Total Encaissé" 
+              value={new Intl.NumberFormat('fr-FR').format(kpis.totalPaye) + " CFA"} 
+              icon={CheckCircle2} 
+              variant="green" 
+              onClick={() => { setStatutFilter("Payée"); setPage(0); }}
+           />
+           <FinanceStatCard 
+              title="Encours Clients" 
+              value={new Intl.NumberFormat('fr-FR').format(kpis.totalImpaye) + " CFA"} 
+              icon={Clock} 
+              variant="rose" 
+              onClick={() => { setStatutFilter("Envoyée"); setPage(0); }}
+           />
+           <FinanceStatCard 
+              title="Total Emis" 
+              value={kpis.count} 
+              icon={FileText} 
+              variant="blue" 
+              onClick={() => { setStatutFilter("Tous"); setPage(0); }}
+           />
+           <FinanceStatCard 
+              title="Brouillons" 
+              value={kpis.brouillons} 
+              icon={FileText} 
+              onClick={() => { setStatutFilter("Brouillon"); setPage(0); }}
+           />
         </div>
 
-        {/* List Card */}
-        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 overflow-hidden flex flex-col">
-           <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row gap-4 justify-between items-center bg-white">
-              <div className="relative w-full sm:max-w-md group">
-                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#1A2E1C] transition-colors" size={18} />
-                 <Input 
-                   placeholder="Rechercher par numéro ou client..." 
-                   value={search}
-                   onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                   className="pl-12 h-12 bg-gray-50/50 border-transparent focus:bg-white focus:ring-2 focus:ring-[#1A2E1C]/10 focus:border-[#1A2E1C]/20 rounded-2xl transition-all"
+        {/* ── Toolbar - Quantum Unified ────────────────────────────────────────── */}
+        <div className="space-y-4">
+           {/* Tier 1: Type Selection */}
+           <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-1.5 flex gap-1.5 overflow-x-auto no-scrollbar">
+              {["Facture", "Devis & Pro-forma", "Avoir"].map((type) => (
+                 <button
+                    key={type}
+                    onClick={() => { setTypeFilter(type); setPage(0); }}
+                    className={cn(
+                       "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap flex items-center gap-2",
+                       typeFilter === type
+                          ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-950/20"
+                          : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5"
+                    )}
+                 >
+                    <div className={cn("w-1.5 h-1.5 rounded-full", typeFilter === type ? "bg-emerald-400" : "bg-gray-300")} />
+                    {type === "Facture" ? "Toutes les Factures" : type}
+                 </button>
+              ))}
+           </div>
+
+           {/* Tier 2: Status Filters & Search */}
+           <div className="bg-white dark:bg-[#131d2e] rounded-[2rem] border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col lg:flex-row gap-3">
+              <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-2xl overflow-x-auto no-scrollbar shrink-0">
+                 {["Tous", "Payée", "Envoyée", "En retard", "Brouillon"].map((status) => (
+                    <button
+                       key={status}
+                       onClick={() => { setStatutFilter(status); setPage(0); }}
+                       className={cn(
+                          "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                          statutFilter === status
+                             ? "bg-white dark:bg-[#1e2d45] text-[#1A2E1C] dark:text-emerald-400 shadow-sm border border-gray-100 dark:border-white/10"
+                             : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                       )}
+                    >
+                       {status === "Envoyée" ? "En attente" : status === "Tous" ? "Tous les états" : status}
+                    </button>
+                 ))}
+              </div>
+
+              <div className="relative flex-1 group">
+                 <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors">
+                    <Search size={18} strokeWidth={2.5} />
+                 </div>
+                 <Input
+                    placeholder="Filtrage par numéro ou identité client..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                    className="pl-14 border-none bg-gray-50/50 dark:bg-white/5 focus-visible:ring-4 focus-visible:ring-emerald-500/10 font-bold h-12 text-sm w-full rounded-2xl transition-all"
                  />
               </div>
-              <div className="flex items-center gap-3">
-                 <div className="flex -space-x-2">
-                    {[1,2,3].map(i => (
-                      <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-100" />
-                    ))}
-                 </div>
-                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-2">Activité récente</p>
+
+              <div className="flex items-center gap-2 px-1">
+                 <Button onClick={() => setOpen(true)} className="h-12 rounded-2xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 text-[10px] font-black uppercase tracking-[0.2em] gap-3 shadow-xl shadow-emerald-950/20 px-8 transition-all active:scale-95 group">
+                    <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <Plus size={14} strokeWidth={3} />
+                    </div>
+                    Document
+                 </Button>
               </div>
            </div>
-           
-           <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse">
-                 <thead>
-                    <tr className="bg-gray-50/30 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                       <th className="px-8 py-5">Identifiant</th>
-                       <th className="px-8 py-5">Échéancier</th>
-                       <th className="px-8 py-5">Entité Client</th>
-                       <th className="px-8 py-5 text-right">Montant Final</th>
-                       <th className="px-8 py-5 text-center">État</th>
-                       <th className="px-8 py-5 text-right">Actions</th>
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-100">
+        </div>
+
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col">
+            <div className="overflow-x-auto">
+               <table className="w-full text-sm text-left border-collapse">
+                  <thead>
+                     <tr className="bg-gray-50/50 dark:bg-white/5 text-gray-400 font-black uppercase tracking-widest text-[10px] border-b border-gray-100 dark:border-[#1e2d45]">
+                        <th className="px-8 py-5">Identifiant</th>
+                        <th className="px-8 py-5 text-center">Échéancier</th>
+                        <th className="px-8 py-5">Entité Client</th>
+                        <th className="px-8 py-5 text-right">Montant Final</th>
+                        <th className="px-8 py-5 text-center">État</th>
+                        <th className="px-8 py-5 text-right pr-12">Actions</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                     {isLoading ? (
-                       <tr><td colSpan={6} className="py-24 text-center text-gray-500"><Loader2 className="animate-spin mx-auto text-emerald-600 mb-4" size={32} /> <span className="text-xs font-black uppercase tracking-widest italic opacity-50">Chargement des données...</span></td></tr>
+                       <tr><td colSpan={6} className="py-32 text-center"><Loader2 className="animate-spin mx-auto text-emerald-600 dark:text-emerald-400 mb-6" size={40} strokeWidth={2} /> <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 italic">Synchronisation institutionnelle en cours...</span></td></tr>
                     ) : filtered.length === 0 ? (
-                       <tr><td colSpan={6} className="py-24 text-center text-gray-500"><div className="w-16 h-16 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-4 text-gray-300"><FileText size={32}/></div> <span className="text-sm font-semibold text-gray-400">Aucun enregistrement trouvé</span></td></tr>
+                       <tr><td colSpan={6} className="py-32 text-center"><div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 dark:text-gray-600"><FileText size={40} strokeWidth={1}/></div> <span className="text-xs font-black uppercase tracking-[0.2em] text-gray-400">Aucun document financier répertorié</span></td></tr>
                     ) : (
                        filtered.map((f: any) => {
                          const sCfg = statutConfig[f.statut] || statutConfig["Brouillon"];
                          const SIcon = sCfg.icon;
                          return (
-                           <tr key={f.id} className="group hover:bg-emerald-50/20 transition-all cursor-pointer border-b border-gray-50 last:border-0" onClick={() => setViewFacture(f)}>
+                           <tr key={f.id} className="group hover:bg-emerald-50/20 dark:hover:bg-white/5 transition-all cursor-pointer border-b border-gray-100 dark:border-[#1e2d45] last:border-0" onClick={() => setViewFacture(f)}>
                               <td className="px-8 py-6">
                                  <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-white group-hover:text-emerald-600 transition-all shadow-sm">
+                                    <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-400 group-hover:bg-white dark:group-hover:bg-white/10 group-hover:text-[#1A2E1C] transition-all shadow-sm border border-transparent group-hover:border-gray-100 dark:group-hover:border-white/10">
                                        <FileText size={18} />
                                     </div>
-                                    <p className="font-extrabold text-gray-900 group-hover:text-emerald-800 transition-colors uppercase tracking-tight">{f.numero_facture}</p>
+                                    <p className="font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">{f.numero_facture}</p>
                                  </div>
                               </td>
-                              <td className="px-8 py-6">
+                              <td className="px-8 py-6 text-center">
                                  <div className="space-y-1">
-                                    <p className="font-semibold text-gray-900">{format(new Date(f.date_facture), "dd MMM yyyy", { locale: fr })}</p>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100">{format(new Date(f.date_facture), "dd MMM yyyy", { locale: fr })}</p>
                                     {f.date_echeance && (
-                                       <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-500/80 bg-rose-50 px-2 py-0.5 rounded-full w-fit">
+                                       <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-500 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full w-fit mx-auto">
                                           <Clock size={10} strokeWidth={3}/> {format(new Date(f.date_echeance), "dd/MM/yyyy")}
                                        </div>
                                     )}
                                  </div>
                               </td>
                               <td className="px-8 py-6">
-                                 <p className="font-bold text-gray-900 group-hover:text-emerald-900 transition-colors">{f.client_nom}</p>
+                                 <p className="font-black text-gray-900 dark:text-gray-100">{f.client_nom}</p>
                                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">{f.type} • Secteur Agri</p>
                               </td>
                               <td className="px-8 py-6 text-right">
-                                 <div className="space-y-1 text-right">
-                                    <span className="text-lg font-black text-gray-900 tracking-tighter block">{Number(f.montant_ttc).toLocaleString()} <span className="text-xs font-bold text-gray-400">FCFA</span></span>
-                                    <p className="text-[10px] font-bold text-gray-400 italic">Net à payer</p>
+                                 <div className="space-y-1">
+                                    <span className="text-lg font-black text-gray-900 dark:text-gray-100 tracking-tighter block">{Number(f.montant_ttc).toLocaleString()} <span className="text-[10px] font-bold text-gray-400 ml-1">FCFA</span></span>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 italic">Net à payer</p>
                                  </div>
                               </td>
                               <td className="px-8 py-6 text-center">
-                                 <Badge variant="outline" className={cn("rounded-xl px-3 py-1.5 font-bold border-transparent text-[10px] uppercase tracking-widest shadow-sm mx-auto", sCfg.bg, sCfg.text, sCfg.border)}>
-                                    <SIcon size={12} className="mr-2" strokeWidth={2.5}/> {sCfg.label}
-                                 </Badge>
+                                 <span className={cn(
+                                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                                   f.statut === "Payée" ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
+                                   f.statut === "Envoyée" ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" :
+                                   f.statut === "Brouillon" ? "bg-slate-50 text-slate-700 border-slate-100 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20" :
+                                   "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
+                                 )}>
+                                    <SIcon size={12} strokeWidth={3}/> {f.statut}
+                                 </span>
                               </td>
-                              <td className="px-8 py-6 text-right">
+                              <td className="px-8 py-6 text-right pr-12">
                                  <div className="flex items-center justify-end gap-2 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setViewFacture(f); }} className="h-10 w-10 rounded-xl text-gray-400 hover:text-emerald-600 hover:bg-white shadow-sm transition-all"><Eye size={18}/></Button>
+                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setViewFacture(f); }} className="h-10 w-10 rounded-xl text-gray-400 hover:text-[#1A2E1C] hover:bg-white dark:hover:bg-white/5 shadow-sm transition-all border border-transparent hover:border-gray-100 dark:hover:border-white/10"><Eye size={18}/></Button>
                                     {isAdmin && (
                                        <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                             <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()} className="h-10 w-10 rounded-xl text-gray-400 hover:bg-white shadow-sm"><span className="text-xl">⋮</span></Button>
+                                             <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()} className="h-10 w-10 rounded-xl text-gray-400 hover:bg-white dark:hover:bg-white/5 shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-white/10 transition-all"><span className="text-xl">⋮</span></Button>
                                           </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-gray-100 p-2">
-                                             <div className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Actions rapides</div>
-                                             {["Envoyée", "Payée", "En retard", "Annulée"].map(s => (
-                                                <DropdownMenuItem key={s} className="rounded-xl font-bold text-sm h-10 px-4 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => updateStatutMutation.mutate({ id: f.id, statut: s })}>
-                                                   <CheckCheck size={16} className="mr-3 opacity-50"/> Marquer comme {s}
+                                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl border-gray-100 dark:border-[#1e2d45] p-2 bg-white dark:bg-[#131d2e]">
+                                             <div className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1 border-b border-gray-50 dark:border-white/5 mx-1 pb-2">Opérations de Facture</div>
+                                             <div className="mt-2 space-y-1">
+                                                {["Envoyée", "Payée", "En retard", "Annulée"].map(s => (
+                                                   <DropdownMenuItem key={s} className="rounded-xl font-bold text-sm h-10 px-4 focus:bg-emerald-50 dark:focus:bg-emerald-500/10 focus:text-emerald-700 dark:focus:text-emerald-400 cursor-pointer group/item" onClick={() => updateStatutMutation.mutate({ id: f.id, statut: s })}>
+                                                      <CheckCheck size={16} className="mr-3 opacity-50 group-hover/item:opacity-100 transition-opacity"/> Marquer comme {s}
+                                                   </DropdownMenuItem>
+                                                ))}
+                                             </div>
+                                             <div className="h-px bg-gray-50 dark:bg-white/5 my-2 mx-2"/>
+                                             <div className="space-y-1">
+                                                <DropdownMenuItem className="rounded-xl font-bold text-sm h-10 px-4 focus:bg-blue-50 dark:focus:bg-blue-500/10 focus:text-blue-700 dark:focus:text-blue-400 cursor-pointer group/item" onClick={() => handleDownloadPDF(f)}>
+                                                   <Download size={16} className="mr-3 opacity-50 group-hover/item:opacity-100 transition-opacity" /> Télécharger PDF
                                                 </DropdownMenuItem>
-                                             ))}
-                                             <div className="h-px bg-gray-50 my-2 mx-2"/>
-                                             <DropdownMenuItem className="rounded-xl font-bold text-sm h-10 px-4 focus:bg-blue-50 focus:text-blue-700 cursor-pointer" onClick={() => handleDownloadPDF(f)}>
-                                                <Download size={16} className="mr-3 opacity-50" /> Télécharger PDF
-                                             </DropdownMenuItem>
-                                             <DropdownMenuItem className="rounded-xl font-bold text-sm h-10 px-4 focus:bg-emerald-50 focus:text-emerald-700 cursor-pointer" onClick={() => handleSendInvoice(f)}>
-                                                <Send size={16} className="mr-3 opacity-50" /> Envoyer au client
-                                             </DropdownMenuItem>
-                                             <div className="h-px bg-gray-50 my-2 mx-2"/>
-                                             <DropdownMenuItem className="rounded-xl font-bold text-sm h-10 px-4 text-rose-500 focus:bg-rose-50 focus:text-rose-600 cursor-pointer" onClick={() => {
+                                                <DropdownMenuItem className="rounded-xl font-bold text-sm h-10 px-4 focus:bg-emerald-50 dark:focus:bg-emerald-500/10 focus:text-emerald-700 dark:focus:text-emerald-400 cursor-pointer group/item" onClick={() => handleSendInvoice(f)}>
+                                                   <Send size={16} className="mr-3 opacity-50 group-hover/item:opacity-100 transition-opacity" /> Envoyer au client
+                                                </DropdownMenuItem>
+                                             </div>
+                                             <div className="h-px bg-gray-50 dark:bg-white/5 my-2 mx-2"/>
+                                             <DropdownMenuItem className="rounded-xl font-bold text-sm h-10 px-4 text-rose-500 focus:bg-rose-50 dark:focus:bg-rose-500/10 focus:text-rose-600 dark:focus:text-rose-400 cursor-pointer group/item" onClick={() => {
                                                 confirm({
                                                   title: "Supprimer la facture",
                                                   description: `Voulez-vous supprimer la facture "${f.numero_facture}" ? Cette action est irréversible.`,
@@ -372,7 +446,7 @@ const Facturation = () => {
                                                   onConfirm: () => deleteMutation.mutate(f.id),
                                                 });
                                              }}>
-                                                <Trash2 size={16} className="mr-3 opacity-50" /> Archiver / Supprimer
+                                                <Trash2 size={16} className="mr-3 opacity-50 group-hover/item:opacity-100 transition-opacity" /> Archiver / Supprimer
                                              </DropdownMenuItem>
                                           </DropdownMenuContent>
                                        </DropdownMenu>
@@ -387,27 +461,87 @@ const Facturation = () => {
               </table>
            </div>
 
-           {/* Pagination */}
-           {totalPages > 1 && (
-             <div className="flex items-center justify-between p-6 border-t border-gray-50 bg-white">
-               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Documents {page * PAGE_SIZE + 1} — {Math.min((page + 1) * PAGE_SIZE, totalItems)} sur {totalItems}
-               </span>
-               <div className="flex items-center gap-2">
-                 <Button variant="ghost" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-50">
-                   <ChevronLeft size={16} className="mr-2" strokeWidth={3}/> Précédent
-                 </Button>
-                 <div className="flex gap-1 items-center px-4">
-                    {[...Array(totalPages)].map((_, i) => (
-                       <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-all", i === page ? "w-6 bg-[#1A2E1C]" : "bg-gray-200")} />
-                    ))}
-                 </div>
-                 <Button variant="ghost" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-50">
-                   Suivant <ChevronRight size={16} className="ml-2" strokeWidth={3}/>
-                 </Button>
-               </div>
-             </div>
-           )}
+            {/* Premium Pagination */}
+            {totalItems > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between p-8 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-[#0B1221] gap-6">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                  Affichage {page * PAGE_SIZE + 1} — {Math.min((page + 1) * PAGE_SIZE, totalItems)} <span className="mx-2 opacity-30">/</span> <span className="text-emerald-600 dark:text-emerald-400">{totalItems} entités</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setPage(Math.max(0, page - 1))} 
+                    disabled={page === 0} 
+                    className="h-10 w-10 rounded-2xl border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 text-gray-400 hover:text-[#1A2E1C] dark:hover:text-emerald-400 hover:border-gray-200 dark:hover:border-white/10 transition-all shadow-sm"
+                  >
+                    <ChevronLeft size={18} />
+                  </Button>
+
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50/50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
+                    {totalPages <= 7 ? (
+                      Array.from({ length: totalPages }, (_, i) => (
+                        <Button
+                          key={i}
+                          variant={page === i ? "default" : "ghost"}
+                          onClick={() => setPage(i)}
+                          className={cn(
+                            "h-8 w-8 rounded-xl text-[10px] font-black transition-all uppercase tracking-tighter",
+                            page === i 
+                              ? "bg-[#1A2E1C] dark:bg-emerald-600 text-white shadow-lg shadow-emerald-950/20" 
+                              : "text-gray-400 hover:bg-white dark:hover:bg-white/10"
+                          )}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))
+                    ) : (
+                      <>
+                        {[0, 1, 2].map(i => (
+                          <Button
+                            key={i}
+                            variant={page === i ? "default" : "ghost"}
+                            onClick={() => setPage(i)}
+                            className={cn(
+                              "h-8 w-8 rounded-xl text-[10px] font-black transition-all uppercase tracking-tighter",
+                              page === i 
+                                ? "bg-[#1A2E1C] dark:bg-emerald-600 text-white shadow-lg shadow-emerald-950/20" 
+                                : "text-gray-400 hover:bg-white dark:hover:bg-white/10"
+                            )}
+                          >
+                            {i + 1}
+                          </Button>
+                        ))}
+                        <span className="px-1 text-gray-300 dark:text-gray-600">...</span>
+                        <Button
+                          variant={page === totalPages - 1 ? "default" : "ghost"}
+                          onClick={() => setPage(totalPages - 1)}
+                          className={cn(
+                            "h-8 w-8 rounded-xl text-[10px] font-black transition-all uppercase tracking-tighter",
+                            page === totalPages - 1 
+                              ? "bg-[#1A2E1C] dark:bg-emerald-600 text-white shadow-lg shadow-emerald-950/20" 
+                              : "text-gray-400 hover:bg-white dark:hover:bg-white/10"
+                          )}
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                   <Button 
+                     variant="outline" 
+                     size="icon"
+                     onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                     disabled={page >= totalPages - 1} 
+                     className="h-10 w-10 rounded-2xl border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 text-gray-400 hover:text-[#1A2E1C] dark:hover:text-emerald-400 hover:border-gray-200 dark:hover:border-white/10 transition-all shadow-sm"
+                   >
+                     <ChevronRight size={18} />
+                   </Button>
+                </div>
+              </div>
+            )}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import { formatCompact } from "@/lib/utils";
 import {
   TrendingUp, TrendingDown, Minus, MapPin,
   BarChart3, Search, Download, Leaf,
-  ShieldCheck, Star, Phone, ArrowUpRight, FileText, X
+  ShieldCheck, Star, ArrowUpRight, FileText, X,
+  MessageCircle, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
@@ -27,23 +28,6 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
-const MOCK_PRIX_MARCHE = [
-  { id: "m1", produit: "Riz Local",    marche: "Ziguinchor (Escale)", prix: 450, unite_prix: "CFA/kg", date_releve: "2024-05-15", tendance: "hausse" },
-  { id: "m2", produit: "Riz Local",    marche: "Ziguinchor (Escale)", prix: 450, unite_prix: "CFA/kg", date_releve: "2024-05-16", tendance: "stable" },
-  { id: "m3", produit: "Riz Local",    marche: "Ziguinchor (Escale)", prix: 460, unite_prix: "CFA/kg", date_releve: "2024-05-17", tendance: "hausse" },
-  { id: "m4", produit: "Riz Local",    marche: "Ziguinchor (Escale)", prix: 455, unite_prix: "CFA/kg", date_releve: "2024-05-18", tendance: "baisse" },
-  { id: "m5", produit: "Riz Local",    marche: "Ziguinchor (Escale)", prix: 465, unite_prix: "CFA/kg", date_releve: "2024-05-19", tendance: "hausse" },
-  { id: "f1", produit: "Mangue Kent",  marche: "Dakar (Castors)",     prix: 800, unite_prix: "CFA/kg", date_releve: "2024-05-15", tendance: "baisse" },
-  { id: "f2", produit: "Mangue Kent",  marche: "Dakar (Castors)",     prix: 820, unite_prix: "CFA/kg", date_releve: "2024-05-16", tendance: "hausse" },
-  { id: "f3", produit: "Mangue Kent",  marche: "Dakar (Castors)",     prix: 850, unite_prix: "CFA/kg", date_releve: "2024-05-17", tendance: "hausse" },
-  { id: "f4", produit: "Mangue Kent",  marche: "Dakar (Castors)",     prix: 840, unite_prix: "CFA/kg", date_releve: "2024-05-18", tendance: "baisse" },
-  { id: "f5", produit: "Mangue Kent",  marche: "Dakar (Castors)",     prix: 880, unite_prix: "CFA/kg", date_releve: "2024-05-19", tendance: "hausse" },
-  { id: "n1", produit: "Anacarde",     marche: "Kolda",               prix: 500, unite_prix: "CFA/kg", date_releve: "2024-05-15", tendance: "stable" },
-  { id: "n2", produit: "Anacarde",     marche: "Kolda",               prix: 510, unite_prix: "CFA/kg", date_releve: "2024-05-16", tendance: "hausse" },
-  { id: "n3", produit: "Anacarde",     marche: "Kolda",               prix: 520, unite_prix: "CFA/kg", date_releve: "2024-05-17", tendance: "hausse" },
-  { id: "n4", produit: "Anacarde",     marche: "Kolda",               prix: 515, unite_prix: "CFA/kg", date_releve: "2024-05-18", tendance: "baisse" },
-  { id: "n5", produit: "Anacarde",     marche: "Kolda",               prix: 530, unite_prix: "CFA/kg", date_releve: "2024-05-19", tendance: "hausse" },
-];
 
 const SPEC_STYLE: Record<string, { emoji: string; color: string; bgLight: string; border: string; accent: string; accentLight: string }> = {
   mangue:   { emoji: "🥭", color: "from-amber-500 to-orange-400",  bgLight: "from-amber-50 to-orange-50",  border: "border-amber-200/60",  accent: "#F59E0B", accentLight: "#FEF3C7" },
@@ -77,11 +61,298 @@ const fadeUp = {
   transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
+
+// ─── Catalogue des prix coopérative ─────────────────────────────────────────
+const PAGE_SIZE = 12;
+
+const CataloguePrixSection = ({
+  speculations, t, isLoading,
+}: {
+  speculations: any[];
+  t: (k: string, fb: string) => string;
+  isLoading: boolean;
+}) => {
+  const [activeCat, setActiveCat] = useState("Tous");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+
+  const categories = useMemo(() => {
+    const cats = [...new Set(speculations.map(p => p.categorie || "Produit"))].filter(Boolean);
+    return ["Tous", ...cats];
+  }, [speculations]);
+
+  const filtered = useMemo(() => {
+    return speculations.filter(p => {
+      const matchCat  = activeCat === "Tous" || (p.categorie || "Produit") === activeCat;
+      const matchSrch = p.nom.toLowerCase().includes(search.toLowerCase());
+      return matchCat && matchSrch;
+    });
+  }, [speculations, activeCat, search]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [activeCat, search]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated  = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  if (!isLoading && speculations.length === 0) return null;
+
+  return (
+    <section className="py-12 sm:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 sm:px-8">
+        {/* Header */}
+        <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-12">
+          <div>
+            <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.3em] block mb-3 sm:mb-4">
+              {t("markets.catalog.eyebrow", "Catalogue")}
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight text-gray-900">
+              {t("markets.catalog.title", "Nos produits disponibles")}
+            </h2>
+            <p className="text-muted-foreground font-light mt-1 sm:mt-2 text-sm">
+              {t("markets.catalog.desc", "Prix exclusifs proposés par la coopérative, directement depuis l'entrepôt.")}
+            </p>
+          </div>
+          {/* Search */}
+          <div className="relative flex-shrink-0 w-full md:w-56">
+            <Input
+              placeholder={t("markets.catalog.search", "Rechercher un produit…")}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10 h-11 rounded-2xl border-black/[0.07] bg-white text-sm"
+            />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+          </div>
+        </motion.div>
+
+        {/* Category tabs */}
+        {categories.length > 1 && (
+          <div className="flex gap-2 flex-wrap mb-6">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCat(cat)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 ${
+                  activeCat === cat
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Loading */}
+        {isLoading ? (
+          <div className="bg-white rounded-3xl border border-black/[0.05] p-12 flex items-center justify-center gap-3 text-gray-400">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm">Chargement du catalogue…</span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-black/[0.05] p-12 text-center text-gray-400">
+            <p className="text-sm font-medium">Aucun produit dans cette catégorie</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden sm:block bg-white rounded-3xl border border-black/[0.05] shadow-[0_8px_30px_-8px_rgba(0,0,0,0.06)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-[#FAFAF9] border-b border-black/[0.04] hover:bg-[#FAFAF9]">
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em] px-7 py-5">{t("markets.catalog.col_product", "Produit")}</TableHead>
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em]">{t("markets.catalog.col_category", "Catégorie")}</TableHead>
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em] text-right">{t("markets.catalog.col_coop", "Prix Coopérative")}</TableHead>
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em] text-right">{t("markets.catalog.col_market", "Prix Marché")}</TableHead>
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em] text-center">{t("markets.catalog.col_saving", "Économie")}</TableHead>
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em]">{t("markets.catalog.col_season", "Saison")}</TableHead>
+                      <TableHead className="font-bold text-[11px] text-gray-400 uppercase tracking-[0.15em] px-7">{t("markets.catalog.col_stock", "Stock")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-black/[0.03]">
+                    {paginated.map((spec) => {
+                      const discountPct = spec.prixMarche > 0
+                        ? Math.round(((spec.prixMarche - spec.prixCoop) / spec.prixMarche) * 100)
+                        : 0;
+                      const stockQty = Number(String(spec.volumeDisponible || "0").replace(/[^0-9.]/g, "")) || 0;
+                      return (
+                        <TableRow key={spec.id} className="hover:bg-[#FAFAF9] transition-colors">
+                          <TableCell className="px-7 py-4">
+                            <p className="font-bold text-gray-900 text-sm">{spec.nom}</p>
+                            {spec.certification && <p className="text-[10px] text-gray-400 mt-0.5">{spec.certification}</p>}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{spec.categorie || "Produit"}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {spec.prixCoop > 0 ? (
+                              <>
+                                <span className="font-bold text-gray-900 text-base">{spec.prixCoop.toLocaleString("fr-FR")}</span>
+                                <span className="text-xs text-gray-400 ml-1">{spec.unite}</span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-300 italic">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {spec.prixMarche > 0 ? (
+                              <>
+                                <span className="font-semibold text-gray-500 text-sm">{spec.prixMarche.toLocaleString("fr-FR")}</span>
+                                <span className="text-xs text-gray-400 ml-1">{spec.unite}</span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-300 italic">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {discountPct > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-emerald-700 bg-emerald-100">
+                                <TrendingDown size={10} />-{discountPct}%
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-300">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-gray-500">{spec.saison || "—"}</span>
+                          </TableCell>
+                          <TableCell className="px-7">
+                            {stockQty > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                                {stockQty.toLocaleString("fr-FR")} <span className="text-xs font-normal text-gray-400">t</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-300">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="px-7 py-4 border-t border-black/[0.03] bg-[#FAFAF9] flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-[11px] text-gray-400 font-medium">
+                  {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} sur {filtered.length} produit{filtered.length !== 1 ? "s" : ""}
+                </p>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 border border-black/[0.06] hover:border-black/[0.15] hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPage(i)}
+                        className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                          i === page
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-gray-400 border border-black/[0.06] hover:border-black/[0.15] hover:text-gray-700"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={page === totalPages - 1}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 border border-black/[0.06] hover:border-black/[0.15] hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+                <a href="https://wa.me/221000000000" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+                  <MessageCircle size={12} />
+                  Commander via WhatsApp
+                  <ArrowUpRight size={11} />
+                </a>
+              </div>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
+              {paginated.map((spec) => {
+                const discountPct = spec.prixMarche > 0
+                  ? Math.round(((spec.prixMarche - spec.prixCoop) / spec.prixMarche) * 100)
+                  : 0;
+                return (
+                  <div key={spec.id} className="bg-white rounded-2xl border border-black/[0.05] p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm">{spec.nom}</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">{spec.categorie || "Produit"}</p>
+                      </div>
+                      {discountPct > 0 && (
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">-{discountPct}%</span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <div>
+                        <span className="text-xl font-bold text-gray-900">
+                          {spec.prixCoop > 0 ? spec.prixCoop.toLocaleString("fr-FR") : "—"}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-1">{spec.unite}</span>
+                      </div>
+                      {spec.prixMarche > 0 && (
+                        <span className="text-sm text-gray-300 line-through">{spec.prixMarche.toLocaleString("fr-FR")}</span>
+                      )}
+                    </div>
+                    {spec.saison && (
+                      <p className="text-xs text-gray-400 mt-2">{spec.saison}</p>
+                    )}
+                    <a href="https://wa.me/221000000000" target="_blank" rel="noreferrer" className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/20 text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-all">
+                      <MessageCircle size={12} />Commander via WhatsApp
+                    </a>
+                  </div>
+                );
+              })}
+
+              {/* Mobile pagination bar */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1.5 pt-4">
+                  <button
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 border border-black/[0.06] bg-white disabled:opacity-30"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs font-bold text-gray-500 bg-white border border-black/[0.06] px-4 py-2 rounded-xl">
+                    Page {page + 1} sur {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page === totalPages - 1}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 border border-black/[0.06] bg-white disabled:opacity-30"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+};
+
+const HISTORY_PAGE_SIZE = 10;
+
 const PrixPublic = () => {
   const [selectedSpec, setSelectedSpec] = useState<string>("mangue");
   const [filterProduit, setFilterProduit] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [docsDialogOpen, setDocsDialogOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE);
   const { t } = useTranslation();
 
   const { data: configs } = useSiteConfig();
@@ -159,15 +430,15 @@ const PrixPublic = () => {
     }));
   }, [configs, dbProduits]);
 
-  const { data: prix = MOCK_PRIX_MARCHE } = useQuery({
+  const { data: prix = [], isLoading: isLoadingPrix } = useQuery({
     queryKey: ["prix-marche-public"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("prix_marche")
         .select("*")
-        .order("date_releve", { ascending: true });
+        .order("date_releve", { ascending: false });
       if (error) throw error;
-      return data && data.length > 0 ? data : MOCK_PRIX_MARCHE;
+      return data ?? [];
     },
   });
 
@@ -203,16 +474,18 @@ const PrixPublic = () => {
   }, [prix, activeSpec, produits]);
 
   const filteredHistory = useMemo(() =>
-    prix
-      .filter((p: any) => {
-        const matchesProduct = filterProduit === "all" || p.produit === filterProduit;
-        const matchesSearch =
-          p.produit.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.marche.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesProduct && matchesSearch;
-      })
-      .sort((a: any, b: any) => b.date_releve.localeCompare(a.date_releve)),
+    prix.filter((p: any) => {
+      const matchesProduct = filterProduit === "all" || p.produit === filterProduit;
+      const matchesSearch =
+        p.produit.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.marche.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesProduct && matchesSearch;
+    }),
   [prix, filterProduit, searchTerm]);
+
+  useEffect(() => {
+    setVisibleCount(HISTORY_PAGE_SIZE);
+  }, [filterProduit, searchTerm]);
 
   const economie = activeSpec && activeSpec.prixMarche > 0 ? Math.round(((activeSpec.prixMarche - activeSpec.prixCoop) / activeSpec.prixMarche) * 100) : 0;
 
@@ -285,10 +558,15 @@ const PrixPublic = () => {
                 {t("markets.hero.download", "Télécharger le catalogue")}
                 <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </button>
-              <button className="flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-white/[0.06] border border-white/10 text-white font-semibold text-sm hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
-                <Phone size={16} />
-                {t("markets.hero.order", "Passer commande")}
-              </button>
+              <a
+                href="https://wa.me/221000000000"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-white/[0.06] border border-white/10 text-white font-semibold text-sm hover:bg-white/10 transition-all duration-300 backdrop-blur-sm"
+              >
+                <MessageCircle size={16} />
+                {t("markets.hero.whatsapp", "Commander via WhatsApp")}
+              </a>
             </div>
           </motion.div>
 
@@ -338,107 +616,8 @@ const PrixPublic = () => {
         </div>
       </div>
 
-      {/* ── Speculations grid ────────────────────────────────────────────────── */}
-      <section className="py-12 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 sm:px-8">
-          <motion.div {...fadeUp} className="mb-8 sm:mb-14">
-            <span className="text-[10px] font-semibold text-primary uppercase tracking-[0.3em] block mb-3 sm:mb-4">
-              {t("markets.catalog.eyebrow", "Catalogue")}
-            </span>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-gray-900">
-              {t("markets.catalog.title", "Nos produits disponibles")}
-            </h2>
-            <p className="text-muted-foreground font-light mt-3 max-w-lg">
-              {t("markets.catalog.desc", "Prix exclusifs proposés par la coopérative, directement depuis |'|entrepôt.")}
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SPECULATIONS.map((spec, i) => {
-              const isSelected = selectedSpec === spec.id;
-              const discountPct = spec.prixMarche > 0
-                ? Math.round(((spec.prixMarche - spec.prixCoop) / spec.prixMarche) * 100)
-                : 0;
-              return (
-                <motion.div
-                  key={spec.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08, duration: 0.5 }}
-                  onClick={() => setSelectedSpec(spec.id)}
-                  className={`group relative bg-white rounded-3xl border p-7 cursor-pointer transition-all duration-300 overflow-hidden ${
-                    isSelected
-                      ? "border-primary shadow-[0_0_0_1px_var(--primary),0_20px_40px_-10px_rgba(27,77,33,0.15)]"
-                      : "border-black/[0.05] hover:border-black/[0.1] hover:shadow-[0_16px_40px_-10px_rgba(0,0,0,0.08)]"
-                  }`}
-                >
-                  {/* Selected indicator */}
-                  {isSelected && (
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary to-primary/30 rounded-t-3xl" />
-                  )}
-
-                  {/* Emoji + name */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-black/[0.04] flex items-center justify-center text-3xl overflow-hidden shrink-0">
-                        {(spec as any).imageUrl
-                          ? <img src={(spec as any).imageUrl} alt={spec.nom} className="w-full h-full object-cover" />
-                          : spec.emoji
-                        }
-                      </div>
-                      <div>
-                        <h3 className="text-base font-bold text-gray-900 tracking-tight">{spec.nom}</h3>
-                        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">{spec.categorie}</p>
-                      </div>
-                    </div>
-                    <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                      spec.tendance === "hausse" ? "bg-emerald-50 text-emerald-700" :
-                      spec.tendance === "baisse" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-600"
-                    }`}>
-                      <TrendIcon tendance={spec.tendance} />
-                      {spec.changePercent > 0 ? "+" : ""}{spec.changePercent}%
-                    </span>
-                  </div>
-
-                  {/* Price block */}
-                  <div className="bg-[#F7FAF7] rounded-2xl p-5 mb-6 border border-primary/10">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-2">{t("markets.catalog.coop_price", "Prix Coopérative")}</p>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-semibold text-gray-900 tracking-tight">
-                        {spec.prixCoop.toLocaleString("fr-FR")}
-                      </span>
-                      <span className="text-sm font-medium text-gray-500">{spec.unite}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-primary/10">
-                      <span className="text-sm text-gray-500">
-                        {t("markets.catalog.market_price", "Marché local")} : <strong className="text-gray-700">{spec.prixMarche.toLocaleString("fr-FR")}</strong>
-                      </span>
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
-                        -{discountPct}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Meta */}
-                  <div className="space-y-2.5 text-sm">
-                    {[
-                      { label: t("markets.catalog.season", "Saison"),           value: spec.saison },
-                      { label: t("markets.stats.stock", "Stock disponible"), value: spec.volumeDisponible },
-                      { label: t("markets.catalog.certification", "Certification"),    value: spec.certification },
-                    ].map((m) => (
-                      <div key={m.label} className="flex justify-between items-center">
-                        <span className="text-gray-400 font-medium">{m.label}</span>
-                        <span className="font-semibold text-gray-800 text-xs">{m.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* ── Cooperative Price Table ──────────────────────────────────────────── */}
+      <CataloguePrixSection speculations={SPECULATIONS} t={t} isLoading={isLoadingProduits} />
 
       {/* ── Price Evolution Chart ─────────────────────────────────────────────── */}
       <section className="py-24 bg-[#071410] relative overflow-hidden">
@@ -592,9 +771,18 @@ const PrixPublic = () => {
             </div>
           </motion.div>
 
+          {/* Empty state */}
+          {!isLoadingPrix && filteredHistory.length === 0 && (
+            <div className="bg-white rounded-3xl border border-black/[0.05] p-16 text-center">
+              <BarChart3 className="w-10 h-10 text-gray-200 mx-auto mb-4" />
+              <p className="text-sm font-semibold text-gray-400">Aucun relevé de marché enregistré</p>
+              <p className="text-xs text-gray-300 mt-1">Les données apparaîtront ici dès qu'un relevé est ajouté depuis l'admin.</p>
+            </div>
+          )}
+
           {/* Mobile card view */}
           <div className="sm:hidden space-y-3">
-            {filteredHistory.slice(0, 10).map((p: any) => (
+            {filteredHistory.slice(0, visibleCount).map((p: any) => (
               <div key={p.id} className="bg-white rounded-2xl border border-black/[0.05] p-4 shadow-sm">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -637,7 +825,7 @@ const PrixPublic = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-black/[0.03]">
-                  {filteredHistory.slice(0, 10).map((p: any) => (
+                  {filteredHistory.slice(0, visibleCount).map((p: any) => (
                     <TableRow key={p.id} className="hover:bg-[#FAFAF9] transition-colors">
                       <TableCell className="px-7 py-5 text-sm font-semibold text-gray-800">
                         {format(new Date(p.date_releve), "dd MMM yyyy", { locale: fr })}
@@ -670,10 +858,21 @@ const PrixPublic = () => {
               </Table>
             </div>
             <div className="px-4 sm:px-7 py-4 border-t border-black/[0.03] bg-[#FAFAF9] flex items-center justify-between">
-              <p className="text-[11px] text-gray-400 font-medium">{t("markets.history.source", "Source : Observatoire des prix ARM")}</p>
-              <Button variant="outline" size="sm" className="h-8 rounded-xl text-xs font-semibold border-black/[0.07]">
-                {t("markets.history.load_more", "Charger plus")}
-              </Button>
+              <p className="text-[11px] text-gray-400 font-medium">
+                {filteredHistory.length > 0
+                  ? `${Math.min(visibleCount, filteredHistory.length)} / ${filteredHistory.length} relevé${filteredHistory.length !== 1 ? "s" : ""}`
+                  : t("markets.history.source", "Source : Observatoire des prix ARM")}
+              </p>
+              {visibleCount < filteredHistory.length && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-xl text-xs font-semibold border-black/[0.07]"
+                  onClick={() => setVisibleCount(v => v + HISTORY_PAGE_SIZE)}
+                >
+                  {t("markets.history.load_more", "Charger plus")}
+                </Button>
+              )}
             </div>
           </div>
         </div>

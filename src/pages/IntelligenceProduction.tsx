@@ -1,7 +1,8 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
-  Calendar, TrendingUp, AlertTriangle, Plus, Pencil, Trash2, Loader2, Brain, CheckCircle2
+  Calendar, TrendingUp, AlertTriangle, Plus, Pencil, Trash2, Loader2, Brain, CheckCircle2,
+  ChevronLeft, ChevronRight, Search
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,12 +58,16 @@ const IntelligenceProduction = () => {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduit, setEditingProduit] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
   const confirm = useConfirm();
 
   const [formData, setFormData] = useState<{ produit: string; niveaux: string[] }>({
     produit: "",
     niveaux: Array(12).fill("Faible"),
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
 
   const { data: calendrierData = [], isLoading } = useQuery({
     queryKey: ["calendrier-production"],
@@ -158,26 +163,90 @@ const IntelligenceProduction = () => {
     }
   });
 
+  const filteredData = calendrierData.filter(row => {
+    const matchesSearch = row.produit.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = activeFilter === "all" || row.niveaux.some(n => n === activeFilter);
+    return matchesSearch && matchesFilter;
+  });
+
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const paginatedData = filteredData.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return (
     <DashboardLayout title="Intelligence Saisonnière" subtitle="Analyse des flux et planification de la récolte">
       <div className="space-y-6">
 
-        {/* Global Action Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Calendrier d'Analyse Sectorielle</h1>
-            <p className="text-sm text-gray-500 mt-1">Configurez le calendrier prévisionnel des différentes filières.</p>
+        {/* ── Header - Quantum Standard ────────────────────────────────────────── */}
+        <div className="relative overflow-hidden bg-white dark:bg-[#131d2e] p-8 rounded-[2.5rem] border border-black/[0.03] dark:border-[#1e2d45] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
+          
+          <div className="relative z-10 flex items-center gap-5">
+            <div className="w-16 h-16 rounded-3xl bg-[#1A2E1C] flex items-center justify-center shadow-2xl shadow-emerald-900/20">
+              <Calendar className="text-emerald-400" size={32} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-none">Intelligence Saisonnière</h1>
+              <p className="text-gray-500 dark:text-gray-400 font-medium mt-1.5 flex items-center gap-2">
+                <Brain size={14} className="text-emerald-500" />
+                Analyse des flux et planification stratégique de la récolte
+              </p>
+            </div>
           </div>
-          <Button onClick={() => handleOpenDialog()} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
-            <Plus className="mr-2" size={16} /> Ajouter une Filière
-          </Button>
+
+          <div className="relative z-10 flex items-center gap-3">
+            <Button 
+              onClick={() => handleOpenDialog()} 
+              className="h-12 px-8 rounded-2xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 shadow-xl shadow-emerald-900/10 font-bold transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <Plus className="mr-2" size={18} />
+              Ajouter une Filière
+            </Button>
+          </div>
         </div>
 
-        {/* Analytics Top KPI */}
+        {/* Analytics Top KPI - Quantum Standard */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard title="Fiabilité Prédictive" value="92%" icon={Brain} description="Algorithme prédictif ajusté à la saison locale" trend="+3%" />
           <StatCard title="Fenêtres Actives" value="3" icon={Calendar} description="Nombre de spéculations en pleine récolte" variant="amber" />
           <StatCard title="Déficits Anticipés" value="12%" icon={AlertTriangle} description="Chute estimée sur les agrumes au prochain quadrimestre" variant="rose" />
+        </div>
+
+        {/* ── Toolbar - Quantum Unified ────────────────────────────────────────── */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+           <div className="relative flex-1">
+              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+              <Input 
+                placeholder="Rechercher une filière ou un produit..." 
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+                className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-12 text-base"
+              />
+           </div>
+           
+           <div className="flex flex-wrap items-center gap-2 p-1">
+              <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto max-w-[800px]">
+                {[
+                  { id: "all", label: "Toutes" },
+                  { id: "Fort", label: "Pleine Saison" },
+                  { id: "Moyen", label: "Disponibilité" },
+                  { id: "Faible", label: "Hors Saison" }
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setActiveFilter(s.id); setPage(0); }}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                      activeFilter === s.id
+                        ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                        : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-white/5"
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -196,29 +265,31 @@ const IntelligenceProduction = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left border-collapse">
-                <thead className="text-gray-500 text-xs uppercase bg-gray-50">
+                <thead className="bg-gray-50/50 dark:bg-white/5 text-gray-400 font-black uppercase text-[10px] tracking-widest border-b border-black/[0.03] dark:border-white/5">
                   <tr>
-                    <th className="px-4 py-3 font-medium border-b border-gray-100">Filière</th>
-                    {moisList.map((m) => <th key={m} className="px-2 py-3 text-center font-medium border-b border-gray-100 min-w-[32px]">{m}</th>)}
-                    <th className="px-4 py-3 text-right font-medium border-b border-gray-100">Actions</th>
+                    <th className="px-8 py-5">Filière</th>
+                    {moisList.map((m) => <th key={m} className="px-2 py-5 text-center min-w-[32px]">{m}</th>)}
+                    <th className="px-8 py-5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {isLoading ? (
                     <tr><td colSpan={14} className="py-12 text-center text-gray-500"><Loader2 className="animate-spin mx-auto mb-2 text-emerald-600" size={24} /> Chargement</td></tr>
-                  ) : calendrierData.length === 0 ? (
-                    <tr><td colSpan={14} className="py-16 text-center">
+                  ) : filteredData.length === 0 ? (
+                    <tr><td colSpan={14} className="py-24 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
-                        <p className="text-gray-500">Calendrier vide. Veuillez ajouter une filière ou importer le modèle public.</p>
-                        <Button onClick={() => seedMutation.mutate()} disabled={seedMutation.isPending} className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200">
-                          {seedMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <Calendar className="mr-2" size={16} />}
-                          Importer le calendrier modèle
+                        <div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] flex items-center justify-center mx-auto mb-2">
+                           <Search className="text-gray-300" size={32} />
+                        </div>
+                        <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Aucun résultat trouvé</p>
+                        <Button onClick={() => { setSearchQuery(""); setActiveFilter("all"); }} variant="ghost" className="text-emerald-600 font-bold text-xs uppercase tracking-widest">
+                           Réinitialiser les filtres
                         </Button>
                       </div>
                     </td></tr>
-                  ) : calendrierData.map((row) => (
-                    <tr key={row.produit} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-gray-900 border-r border-gray-50">{row.produit}</td>
+                  ) : paginatedData.map((row) => (
+                    <tr key={row.produit} className="hover:bg-emerald-50/30 dark:hover:bg-emerald-500/[0.02] transition-all duration-300 group">
+                      <td className="px-8 py-6 font-black text-gray-900 dark:text-gray-100 text-base tracking-tight">{row.produit}</td>
                       {row.niveaux.map((niveau, idx) => {
                         const config = niveauConfig[niveau] || niveauConfig["Faible"];
                         return (
@@ -231,7 +302,7 @@ const IntelligenceProduction = () => {
                           </td>
                         );
                       })}
-                      <td className="px-4 py-3 text-right border-l border-gray-50 whitespace-nowrap">
+                      <td className="px-8 py-6 text-right whitespace-nowrap">
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-gray-400 hover:text-gray-900" onClick={() => handleOpenDialog(row)}><Pencil size={14} /></Button>
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-400 hover:text-rose-600 hover:bg-rose-50" onClick={() => {
                           confirm({
@@ -248,6 +319,86 @@ const IntelligenceProduction = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Premium Pagination */}
+            {totalItems > PAGE_SIZE && (
+              <div className="flex flex-col sm:flex-row items-center justify-between p-6 bg-white border-t border-gray-100 gap-4">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Index {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, totalItems)} sur {totalItems} filières
+                </div>
+                
+                <div className="flex items-center gap-1.5">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setPage(Math.max(0, page - 1))} 
+                    disabled={page === 0} 
+                    className="h-9 w-9 rounded-xl border-gray-100 bg-white text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronLeft size={16} />
+                  </Button>
+
+                  {totalPages <= 7 ? (
+                    Array.from({ length: totalPages }, (_, i) => (
+                      <Button
+                        key={i}
+                        variant={page === i ? "default" : "outline"}
+                        onClick={() => setPage(i)}
+                        className={cn(
+                          "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                          page === i 
+                            ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                            : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                        )}
+                      >
+                        {i + 1}
+                      </Button>
+                    ))
+                  ) : (
+                    <>
+                      {[0, 1, 2].map(i => (
+                        <Button
+                          key={i}
+                          variant={page === i ? "default" : "outline"}
+                          onClick={() => setPage(i)}
+                          className={cn(
+                            "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                            page === i 
+                              ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                              : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                          )}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))}
+                      <span className="px-1 text-gray-300">...</span>
+                      <Button
+                        variant={page === totalPages - 1 ? "default" : "outline"}
+                        onClick={() => setPage(totalPages - 1)}
+                        className={cn(
+                          "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                          page === totalPages - 1 
+                            ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                            : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                        )}
+                      >
+                        {totalPages}
+                      </Button>
+                    </>
+                  )}
+
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                    disabled={page >= totalPages - 1} 
+                    className="h-9 w-9 rounded-xl border-gray-100 bg-white text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Insights Panel */}

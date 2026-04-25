@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          user_email: string | null
+          user_name: string | null
+          action: string
+          module: string
+          entity_type: string | null
+          entity_id: string | null
+          label: string | null
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          user_email?: string | null
+          user_name?: string | null
+          action: string
+          module: string
+          entity_type?: string | null
+          entity_id?: string | null
+          label?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          user_email?: string | null
+          user_name?: string | null
+          action?: string
+          module?: string
+          entity_type?: string | null
+          entity_id?: string | null
+          label?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      admin_notifications: {
+        Row: {
+          id: string
+          type: string
+          title: string
+          body: string | null
+          actor_id: string | null
+          actor_email: string | null
+          actor_name: string | null
+          target_id: string | null
+          target_email: string | null
+          metadata: Json
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          type: string
+          title: string
+          body?: string | null
+          actor_id?: string | null
+          actor_email?: string | null
+          actor_name?: string | null
+          target_id?: string | null
+          target_email?: string | null
+          metadata?: Json
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          title?: string
+          body?: string | null
+          actor_id?: string | null
+          actor_email?: string | null
+          actor_name?: string | null
+          target_id?: string | null
+          target_email?: string | null
+          metadata?: Json
+          is_read?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       calendrier_production: {
         Row: {
           annee: number | null
@@ -618,9 +705,13 @@ export type Database = {
           cultures: string[] | null
           date_adhesion: string | null
           email: string | null
+          genre: string | null
           id: string
+          latitude: number | null
           localisation: string
+          longitude: number | null
           nom: string
+          numero_membre: string | null
           photo_url: string | null
           statut_actif: boolean | null
           superficie: number | null
@@ -634,9 +725,13 @@ export type Database = {
           cultures?: string[] | null
           date_adhesion?: string | null
           email?: string | null
+          genre?: string | null
           id?: string
+          latitude?: number | null
           localisation?: string
+          longitude?: number | null
           nom: string
+          numero_membre?: string | null
           photo_url?: string | null
           statut_actif?: boolean | null
           superficie?: number | null
@@ -650,9 +745,13 @@ export type Database = {
           cultures?: string[] | null
           date_adhesion?: string | null
           email?: string | null
+          genre?: string | null
           id?: string
+          latitude?: number | null
           localisation?: string
+          longitude?: number | null
           nom?: string
+          numero_membre?: string | null
           photo_url?: string | null
           statut_actif?: boolean | null
           superficie?: number | null
@@ -857,6 +956,69 @@ export type Database = {
         }
         Relationships: []
       }
+      taches: {
+        Row: {
+          id: string
+          user_id: string
+          titre: string
+          description: string | null
+          type: string
+          statut: string
+          priorite: string
+          date_debut: string | null
+          date_fin: string | null
+          date_echeance: string | null
+          lieu: string | null
+          participants: string[] | null
+          tags: string[] | null
+          couleur: string | null
+          is_all_day: boolean | null
+          rappel_minutes: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          titre: string
+          description?: string | null
+          type?: string
+          statut?: string
+          priorite?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          date_echeance?: string | null
+          lieu?: string | null
+          participants?: string[] | null
+          tags?: string[] | null
+          couleur?: string | null
+          is_all_day?: boolean | null
+          rappel_minutes?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          titre?: string
+          description?: string | null
+          type?: string
+          statut?: string
+          priorite?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          date_echeance?: string | null
+          lieu?: string | null
+          participants?: string[] | null
+          tags?: string[] | null
+          couleur?: string | null
+          is_all_day?: boolean | null
+          rappel_minutes?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stocks: {
         Row: {
           id: string
@@ -1020,6 +1182,185 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      entity_notes: {
+        Row: {
+          id: string
+          entity_type: string
+          entity_id: string
+          content: string
+          author_id: string | null
+          author_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          entity_type: string
+          entity_id: string
+          content: string
+          author_id?: string | null
+          author_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          entity_type?: string
+          entity_id?: string
+          content?: string
+          author_id?: string | null
+          author_name?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      fiches_analytiques: {
+        Row: {
+          id: string
+          produit: string
+          code_produit: string | null
+          campagne: string
+          variete: string | null
+          superficie: number
+          zone: string | null
+          prix_unitaire: number
+          id_producteur_externe: string | null
+          quantite_totale: number
+          contacts: string | null
+          producteur_id: string | null
+          charges_variables: Json
+          charges_fixes: Json
+          couts_commercialisation: Json
+          taux_taxes: number
+          taux_commission_producteur: number
+          taux_commission_etaam: number
+          statut: string
+          notes: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          produit: string
+          code_produit?: string | null
+          campagne?: string
+          variete?: string | null
+          superficie?: number
+          zone?: string | null
+          prix_unitaire?: number
+          id_producteur_externe?: string | null
+          quantite_totale?: number
+          contacts?: string | null
+          producteur_id?: string | null
+          charges_variables?: Json
+          charges_fixes?: Json
+          couts_commercialisation?: Json
+          taux_taxes?: number
+          taux_commission_producteur?: number
+          taux_commission_etaam?: number
+          statut?: string
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          produit?: string
+          code_produit?: string | null
+          campagne?: string
+          variete?: string | null
+          superficie?: number
+          zone?: string | null
+          prix_unitaire?: number
+          id_producteur_externe?: string | null
+          quantite_totale?: number
+          contacts?: string | null
+          producteur_id?: string | null
+          charges_variables?: Json
+          charges_fixes?: Json
+          couts_commercialisation?: Json
+          taux_taxes?: number
+          taux_commission_producteur?: number
+          taux_commission_etaam?: number
+          statut?: string
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiches_analytiques_producteur_id_fkey"
+            columns: ["producteur_id"]
+            isOneToOne: false
+            referencedRelation: "producteurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permissions: {
+        Row: {
+          id: string
+          user_id: string
+          module: string
+          can_access: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          module: string
+          can_access?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          module?: string
+          can_access?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          user_email: string | null
+          user_name: string | null
+          user_agent: string | null
+          logged_in_at: string
+          last_seen_at: string
+          logged_out_at: string | null
+          duration_seconds: number | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          user_email?: string | null
+          user_name?: string | null
+          user_agent?: string | null
+          logged_in_at?: string
+          last_seen_at?: string
+          logged_out_at?: string | null
+          duration_seconds?: number | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          user_email?: string | null
+          user_name?: string | null
+          user_agent?: string | null
+          logged_in_at?: string
+          last_seen_at?: string
+          logged_out_at?: string | null
+          duration_seconds?: number | null
+        }
+        Relationships: []
       }
     }
     Views: {

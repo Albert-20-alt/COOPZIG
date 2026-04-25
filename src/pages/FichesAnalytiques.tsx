@@ -1,8 +1,10 @@
 import { useState, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import {
   Plus, FileText, Save, Loader2, ArrowLeft, Trash2,
   CheckCircle2, Archive, AlertTriangle, Download,
   ChevronDown, ChevronUp, Search, Eye, Pencil, X,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -892,7 +894,10 @@ const FichesAnalytiques = () => {
   const [form, setForm] = useState<Omit<Fiche, "id"|"created_at"|"updated_at">>(newFiche());
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("tous");
   const [expandedSections, setExpandedSections] = useState({ d1: true, d2: true, d3: true });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // ── Queries ──────────────────────────────────────────────────────────────────
   const { data: fiches = [], isLoading } = useQuery({
@@ -1041,12 +1046,30 @@ const FichesAnalytiques = () => {
     });
   };
 
-  const filtered = fiches.filter(
-    (f) =>
+  const filtered = fiches.filter((f) => {
+    const matchSearch =
       f.produit.toLowerCase().includes(search.toLowerCase()) ||
       f.campagne.includes(search) ||
-      (f.zone || "").toLowerCase().includes(search.toLowerCase()),
+      (f.zone || "").toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "tous" || f.statut === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentItems = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
   );
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (val: string) => {
+    setStatusFilter(val);
+    setCurrentPage(1);
+  };
 
   const toggleSection = (s: "d1" | "d2" | "d3") =>
     setExpandedSections((prev) => ({ ...prev, [s]: !prev[s] }));
@@ -1078,17 +1101,41 @@ const FichesAnalytiques = () => {
           ))}
         </div>
 
-        {/* Search + List */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-gray-100 dark:border-[#1e2d45] flex items-center gap-3">
-            <Search size={16} className="text-gray-400" />
+        {/* Filters & Search - Quantum Standard */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col sm:flex-row gap-2 mb-6">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
             <Input
               placeholder="Rechercher par produit, campagne, zone…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border-0 bg-transparent p-0 text-sm focus-visible:ring-0 h-auto"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
             />
           </div>
+          <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto">
+            {[
+              { id: "tous", label: "Tous" },
+              { id: "brouillon", label: "Brouillons" },
+              { id: "validé", label: "Validées" },
+              { id: "archivé", label: "Archivées" }
+            ].map((s) => (
+              <button
+                key={s.id}
+                onClick={() => handleStatusFilterChange(s.id)}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  statusFilter === s.id
+                    ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List container */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden">
 
           {isLoading ? (
             <div className="flex justify-center p-12"><Loader2 className="animate-spin text-emerald-600" size={24} /></div>
@@ -1109,7 +1156,7 @@ const FichesAnalytiques = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-[#1e2d45]">
-                  {filtered.map((fiche) => {
+                  {currentItems.map((fiche) => {
                     const s = calcSummary(fiche);
                     return (
                       <tr key={fiche.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] cursor-pointer" onClick={() => setPreviewFiche(fiche)}>
@@ -1168,6 +1215,53 @@ const FichesAnalytiques = () => {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#131d2e] p-4 rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm mt-4">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+              Affichage de {(currentPage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length} fiches
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-xl border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 h-9 w-9"
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              
+              <div className="flex items-center gap-1.5 mx-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={cn(
+                      "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                      currentPage === p
+                        ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10"
+                        : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-xl border-gray-100 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 h-9 w-9"
+              >
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
 
         <FichePreviewModal
           fiche={previewFiche}

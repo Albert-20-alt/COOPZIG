@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, cn } from "@/lib/utils";
 import { useRef } from "react";
 import { useConfirm } from "@/components/ConfirmDialog";
 
@@ -39,9 +39,12 @@ const CatalogueProduits = () => {
   const confirm = useConfirm();
   const [uploading, setUploading] = useState(false);
 
-  // Pagination
+  // Pagination & Filtering
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [filterCategorie, setFilterCategorie] = useState("all");
+
+  const categories = ["Fruits", "Céréales", "Riz", "Noix", "Oléagineux", "Légumes", "Autre"];
 
   const [formData, setFormData] = useState({
     nom: "",
@@ -184,8 +187,9 @@ const CatalogueProduits = () => {
   };
 
   const filteredProduits = produits.filter(p => 
-    p.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.variete && p.variete.toLowerCase().includes(searchTerm.toLowerCase()))
+    (p.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     (p.variete && p.variete.toLowerCase().includes(searchTerm.toLowerCase()))) &&
+    (filterCategorie === "all" || p.categorie === filterCategorie)
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredProduits.length / itemsPerPage));
@@ -205,19 +209,49 @@ const CatalogueProduits = () => {
       <div className="space-y-6">
         
         {/* Header Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <Input 
-              placeholder="Rechercher un produit..." 
-              className="pl-10 h-11 bg-gray-50/50 border-gray-100"
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#131d2e] p-6 rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Registre du Catalogue</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gestion des références commerciales et e-commerce.</p>
           </div>
-          <Button onClick={() => handleOpenDialog()} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 h-11 px-6 rounded-xl">
+          <Button onClick={() => handleOpenDialog()} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 h-11 px-6 rounded-xl shadow-lg shadow-emerald-900/10">
              <Plus className="mr-2" size={18} /> Nouveau Produit
           </Button>
+        </div>
+
+        {/* Search & Filters - Quantum Standard */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+            <Input
+              placeholder="Rechercher un produit ou une variété..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
+            />
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2 p-1">
+            <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto max-w-[600px]">
+              {[
+                { id: "all", label: "Tous" },
+                ...categories.map(c => ({ id: c, label: c }))
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => { setFilterCategorie(s.id); setCurrentPage(1); }}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                    filterCategorie === s.id
+                      ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                      : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Grid Display */}
@@ -239,13 +273,13 @@ const CatalogueProduits = () => {
                 .join(" - ");
               
               return (
-                <Card key={p.id} className="group relative bg-white rounded-[2.5rem] border border-black/[0.03] overflow-hidden hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)] transition-all duration-700 flex flex-col h-full">
+                <Card key={p.id} className="group relative bg-white dark:bg-[#131d2e] rounded-[2.5rem] border border-black/[0.03] dark:border-[#1e2d45] overflow-hidden hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.06)] transition-all duration-700 flex flex-col h-full">
                   {/* ... Card Content ... */}
                   <div className="relative h-56 overflow-hidden">
                     {p.photo_url ? (
                       <img src={p.photo_url} alt={p.nom} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50/50 text-gray-400">
+                     ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50/50 dark:bg-white/5 text-gray-400">
                         <ImageIcon size={32} className="mb-2 opacity-20" />
                         <span className="text-[10px] uppercase tracking-widest font-bold opacity-30">Aucun Visuel</span>
                       </div>
@@ -292,42 +326,42 @@ const CatalogueProduits = () => {
 
                   <CardContent className="p-7 flex flex-col flex-grow">
                     <div className="mb-2">
-                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-800 transition-colors duration-500 truncate mr-2">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-emerald-800 dark:group-hover:text-emerald-400 transition-colors duration-500 truncate mr-2">
                         {p.nom}
                       </h3>
                       <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{p.variete || "Variété Élite"}</p>
                     </div>
 
-                    <p className="text-[13px] text-gray-500/90 mb-6 line-clamp-2 leading-relaxed font-medium mt-2">
+                    <p className="text-[13px] text-gray-500/90 dark:text-gray-400 mb-6 line-clamp-2 leading-relaxed font-medium mt-2">
                       {p.description || "Excellence cultivée dans nos vergers de Casamance. Rigueur et qualité supérieure."}
                     </p>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 pt-6 border-t border-black/[0.04] mt-auto">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 pt-6 border-t border-black/[0.04] dark:border-white/5 mt-auto">
                       <div className="flex items-center gap-2.5">
                         <CalendarIcon size={14} className="text-orange-500 shrink-0" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-[10px] font-bold truncate leading-none mb-0.5">{cleanSaison || "En cours"}</span>
+                          <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 truncate leading-none mb-0.5">{cleanSaison || "En cours"}</span>
                           <span className="text-[7px] uppercase font-bold tracking-widest text-gray-400 leading-none">Période</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Scale size={14} className="text-emerald-600 shrink-0" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-[10px] font-bold truncate leading-none mb-0.5">{formatNumber(p.quantite_estimee || 0)} T</span>
+                          <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 truncate leading-none mb-0.5">{formatNumber(p.quantite_estimee || 0)} T</span>
                           <span className="text-[7px] uppercase font-bold tracking-widest text-gray-400 leading-none">Capacité</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5">
-                        <MapPin size={14} className="text-emerald-700 shrink-0" />
+                        <MapPin size={14} className="text-emerald-700 dark:text-emerald-500 shrink-0" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-[10px] font-bold truncate leading-none mb-0.5 truncate">{p.zone_production || "Casamance"}</span>
+                          <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 truncate leading-none mb-0.5 truncate">{p.zone_production || "Casamance"}</span>
                           <span className="text-[7px] uppercase font-bold tracking-widest text-gray-400 leading-none">Origine</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5">
                         <Star size={14} className="text-amber-500 shrink-0" />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-[10px] font-bold truncate leading-none mb-0.5">Certifié</span>
+                          <span className="text-[10px] font-bold text-gray-900 dark:text-gray-100 truncate leading-none mb-0.5">Certifié</span>
                           <span className="text-[7px] uppercase font-bold tracking-widest text-gray-400 leading-none">Standard</span>
                         </div>
                       </div>
@@ -339,97 +373,50 @@ const CatalogueProduits = () => {
           </div>
         )}
 
-        {/* Pagination Bar */}
+        {/* Premium Pagination */}
         {!isLoading && filteredProduits.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-6 py-4 rounded-2xl border border-gray-100 shadow-sm">
-            
-            {/* Count info + per-page selector */}
-            <div className="flex items-center gap-3 text-sm text-gray-500">
-              <span>
-                Affichage de{" "}
-                <span className="font-semibold text-gray-800">
-                  {Math.min((currentPage - 1) * itemsPerPage + 1, filteredProduits.length)}
-                  {"–"}
-                  {Math.min(currentPage * itemsPerPage, filteredProduits.length)}
-                </span>
-                {" "}sur{" "}
-                <span className="font-semibold text-gray-800">{filteredProduits.length}</span> produits
-              </span>
-              <select
-                id="items-per-page"
-                value={itemsPerPage}
-                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                className="ml-2 h-8 rounded-lg border border-gray-200 bg-gray-50 px-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              >
-                {[4, 8, 12, 16].map(n => <option key={n} value={n}>{n} / page</option>)}
-              </select>
+          <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border border-gray-100 dark:border-[#1e2d45] bg-white dark:bg-[#131d2e] gap-4 mt-8 rounded-2xl shadow-sm">
+            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+              Affichage de {(currentPage - 1) * itemsPerPage + 1} à {Math.min(currentPage * itemsPerPage, filteredProduits.length)} sur {filteredProduits.length} produits
             </div>
+            
+            <div className="flex items-center gap-1.5">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                disabled={currentPage === 1} 
+                className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+              >
+                <ChevronLeft size={14} />
+              </Button>
 
-            {/* Page buttons */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-                className="h-9 w-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Première page"
-              >
-                <ChevronsLeft size={15} />
-              </button>
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="h-9 w-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Page précédente"
-              >
-                <ChevronLeft size={15} />
-              </button>
+              <div className="flex items-center gap-1.5 mx-2">
+                {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p + 1)}
+                    className={cn(
+                      "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                      currentPage === p + 1
+                        ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                        : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    {p + 1}
+                  </button>
+                ))}
+              </div>
 
-              {/* Page numbers */}
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => {
-                  if (totalPages <= 5) return true;
-                  return Math.abs(page - currentPage) <= 1 || page === 1 || page === totalPages;
-                })
-                .reduce((acc: (number | string)[], page, idx, arr) => {
-                  if (idx > 0 && (page as number) - (arr[idx - 1] as number) > 1) acc.push("...");
-                  acc.push(page);
-                  return acc;
-                }, [])
-                .map((page, idx) =>
-                  page === "..." ? (
-                    <span key={`ellipsis-${idx}`} className="h-9 w-9 flex items-center justify-center text-xs text-gray-400">…</span>
-                  ) : (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page as number)}
-                      className={`h-9 w-9 flex items-center justify-center rounded-xl text-sm font-semibold border transition-all ${
-                        currentPage === page
-                          ? "bg-[#1A2E1C] text-white border-[#1A2E1C] shadow-sm"
-                          : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )
-              }
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="h-9 w-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Page suivante"
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                disabled={currentPage === totalPages} 
+                className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
               >
-                <ChevronRight size={15} />
-              </button>
-              <button
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-                className="h-9 w-9 flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Dernière page"
-              >
-                <ChevronsRight size={15} />
-              </button>
+                <ChevronRight size={14} />
+              </Button>
             </div>
           </div>
         )}

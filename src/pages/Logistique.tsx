@@ -29,25 +29,31 @@ const statusConfig: Record<string, { cls: string; icon: any }> = {
   "Planifié": { cls: "bg-indigo-50 text-indigo-700", icon: Calendar },
 };
 
-const StatCard = ({ title, value, icon: Icon, description, trend, variant = "default" }: any) => (
-  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden relative">
-    <div className="flex justify-between items-start mb-4">
+const LogistiqueStatCard = ({ title, value, icon: Icon, description, trend, variant = "default" }: any) => (
+  <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] p-5 shadow-sm relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors" />
+    
+    <div className="flex items-center justify-between mb-4 relative z-10">
       <div className={cn(
-        "p-2.5 rounded-lg",
-        variant === "gold" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600",
-        variant === "blue" ? "bg-blue-50 text-blue-600" : ""
+        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+        variant === "gold" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400" : 
+        variant === "blue" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400" : 
+        "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
       )}>
-        <Icon size={20} strokeWidth={2} />
+        <Icon size={18} strokeWidth={2.5} />
       </div>
       {trend && (
-        <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-100/50 dark:border-emerald-500/20">
           {trend}
         </span>
       )}
     </div>
-    <h3 className="text-2xl font-bold text-gray-900 mb-1">{value}</h3>
-    <p className="text-sm font-medium text-gray-500">{title}</p>
-    {description && <p className="text-xs text-gray-400 mt-1">{description}</p>}
+    
+    <div className="relative z-10">
+      <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-none mb-1">{value}</h3>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+      {description && <p className="text-[11px] text-gray-500 mt-2 font-medium italic">{description}</p>}
+    </div>
   </div>
 );
 
@@ -222,65 +228,85 @@ export default function Logistique() {
     <DashboardLayout title="Logistique" subtitle="Supervision des flux de transport et certification e-POD">
       <div className="space-y-6">
 
-        {/* Clean Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+        {/* Header - No action integrated into toolbar */}
+        <div className="bg-white dark:bg-[#131d2e] p-6 rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Maillage Logistique</h1>
-            <p className="text-sm text-gray-500 mt-1">Garantissez la traçabilité des expéditions avec la signature digitale.</p>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-none mb-2">Supervision Logistique</h1>
+            <p className="text-sm text-gray-500 font-medium italic">Garantissez la traçabilité des expéditions avec la certification e-POD irréfutable.</p>
           </div>
-          {isAdmin && (
-             <Button onClick={() => setIsPlanningOpen(true)} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
-               <Truck className="mr-2" size={16} />
-               Planifier Transport
-             </Button>
-          )}
+          <div className="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-900/10 px-4 py-3 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
+             <div className="w-10 h-10 rounded-xl bg-white dark:bg-[#0B1910] flex items-center justify-center shadow-sm">
+                <Activity size={18} className="text-emerald-600 animate-pulse" />
+             </div>
+             <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Statut Système</p>
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tighter">Maillage Actif • 24/7</p>
+             </div>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-           <StatCard title="Traitements Actifs" value={stats.enRoute} icon={Navigation} description="En cours de transit" variant="blue" trend="LIVE" />
-           <StatCard title="En Collecte" value={stats.collecte} icon={Package} description="Chargement en zone" variant="default" />
-           <StatCard title="Livraisons Certifiées" value={stats.livrees} icon={ShieldCheck} description="Validation e-POD" variant="gold" />
-           <StatCard title="Fonds Liés" value={`${(stats.livrees * 8.5).toFixed(1)}M`} icon={Banknote} description="CFA débloqués" variant="default" />
+        {/* ── Stats Grid ───────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+           <LogistiqueStatCard title="Traitements Actifs" value={stats.enRoute} icon={Navigation} description="En cours de transit" variant="blue" trend="LIVE" />
+           <LogistiqueStatCard title="En Collecte" value={stats.collecte} icon={Package} description="Chargement en zone" variant="default" />
+           <LogistiqueStatCard title="Livraisons Certifiées" value={stats.livrees} icon={ShieldCheck} description="Validation e-POD" variant="gold" />
+           <LogistiqueStatCard title="Fonds Liés" value={`${(stats.livrees * 8.5).toFixed(1)}M`} icon={Banknote} description="CFA débloqués" variant="default" />
         </div>
 
-        {/* Unified Search */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between gap-4">
-           <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <Input 
-                placeholder="Chercher destination, transporteur..." 
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                className="pl-10 h-10 border-gray-200 w-full"
-              />
-           </div>
-           
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsMapOpen(true)} className="h-10 px-4 bg-white border-gray-200 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                 <Globe className="mr-2" size={16}/> Carte Tactique
-              </Button>
-           </div>
+        {/* ── Toolbar - Quantum Unified ────────────────────────────────────────── */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2 mb-6">
+          <div className="flex gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto shrink-0">
+            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20 whitespace-nowrap">
+              <Activity size={14} />
+              <span>Tableau de bord</span>
+            </button>
+            <button onClick={() => setIsMapOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-white/5 whitespace-nowrap transition-all">
+              <Globe size={14} />
+              <span>Carte Tactique</span>
+            </button>
+          </div>
+
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+            <Input 
+              placeholder="Chercher destination, transporteur, #ID..." 
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11 text-base w-full" 
+            />
+          </div>
+
+          <div className="flex items-center gap-2 px-1">
+            {isAdmin && (
+               <Button 
+                 onClick={() => setIsPlanningOpen(true)} 
+                 className="h-10 px-6 rounded-xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 shadow-lg shadow-emerald-900/10 font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+               >
+                 <Truck size={16} className="mr-2" />
+                 Planifier Transport
+               </Button>
+            )}
+          </div>
         </div>
 
-        {/* List Table */}
+        {/* List Table - Quantum High Density */}
         {isLoading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>
+          <div className="flex justify-center py-24 text-gray-300"><Loader2 className="animate-spin" size={32} /></div>
         ) : (
-          <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden">
+          <div className="bg-white dark:bg-[#131d2e] border border-gray-100 dark:border-[#1e2d45] shadow-sm rounded-2xl overflow-hidden">
              <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                   <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+                   <thead className="bg-gray-50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-[#1e2d45]">
                       <tr>
-                         <th className="px-6 py-4">Index & Création</th>
-                         <th className="px-6 py-4">Transporteur</th>
-                         <th className="px-6 py-4">Charge</th>
-                         <th className="px-6 py-4">Destination</th>
-                         <th className="px-6 py-4">Statut</th>
-                         <th className="px-6 py-4 text-right">e-POD</th>
+                         <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Index & Création</th>
+                         <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Transporteur</th>
+                         <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Charge</th>
+                         <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Destination</th>
+                         <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
+                         <th className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right">e-POD</th>
                       </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-100">
+                   <tbody className="divide-y divide-gray-50 dark:divide-[#1e2d45]">
                       {filtered.length === 0 ? (
                          <tr><td colSpan={6} className="py-12 text-center text-gray-500">Aucun flux logistique.</td></tr>
                       ) : (
@@ -347,21 +373,81 @@ export default function Logistique() {
                  </table>
               </div>
               
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50/50">
-                  <span className="text-sm text-gray-600">
-                     Affichage de {filtered.length} résultat(s) sur {totalItems}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="bg-white border-gray-200">
-                      <ChevronLeft size={16} className="mr-1" /> Précédent
+              {/* Premium Pagination */}
+              {totalItems > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between p-5 border-t border-gray-100 bg-gray-50/50 gap-4">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    Index {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, totalItems)} sur {totalItems} expéditions
+                  </div>
+                  
+                  <div className="flex items-center gap-1.5">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setPage(Math.max(0, page - 1))} 
+                      disabled={page === 0} 
+                      className="h-9 w-9 rounded-xl border-gray-100 bg-white text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                    >
+                      <ChevronLeft size={16} />
                     </Button>
-                    <span className="text-sm font-medium text-gray-600 px-2">
-                       Page {page + 1} sur {Math.max(1, totalPages)}
-                    </span>
-                    <Button variant="outline" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="bg-white border-gray-200">
-                      Suivant <ChevronRight size={16} className="ml-1" />
+
+                    {totalPages <= 7 ? (
+                      Array.from({ length: totalPages }, (_, i) => (
+                        <Button
+                          key={i}
+                          variant={page === i ? "default" : "outline"}
+                          onClick={() => setPage(i)}
+                          className={cn(
+                            "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                            page === i 
+                              ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                              : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                          )}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))
+                    ) : (
+                      <>
+                        {[0, 1, 2].map(i => (
+                          <Button
+                            key={i}
+                            variant={page === i ? "default" : "outline"}
+                            onClick={() => setPage(i)}
+                            className={cn(
+                              "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                              page === i 
+                                ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                                : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                            )}
+                          >
+                            {i + 1}
+                          </Button>
+                        ))}
+                        <span className="px-1 text-gray-300">...</span>
+                        <Button
+                          variant={page === totalPages - 1 ? "default" : "outline"}
+                          onClick={() => setPage(totalPages - 1)}
+                          className={cn(
+                            "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                            page === totalPages - 1 
+                              ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                              : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                          )}
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                      disabled={page >= totalPages - 1} 
+                      className="h-9 w-9 rounded-xl border-gray-100 bg-white text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                    >
+                      <ChevronRight size={16} />
                     </Button>
                   </div>
                 </div>

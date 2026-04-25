@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { 
   AlertTriangle, TrendingDown, Target, Microscope, Plus, Loader2, 
-  Trash2, MapPin, CheckCircle2
+  Trash2, MapPin, CheckCircle2, Search, Filter,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,6 +57,10 @@ const PertesPostRecolte = () => {
   const [form, setForm] = useState({
     produit: "", quantite_perdue: "", quantite_initiale: "", unite: "kg", cause: "Autre", zone: "", notes: "", date_constat: new Date().toISOString().split("T")[0],
   });
+  const [search, setSearch] = useState("");
+  const [causeFilter, setCauseFilter] = useState<string>("tous");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   const { data: isAdmin } = useQuery({
     queryKey: ["isAdmin", user?.id],
@@ -140,6 +145,32 @@ const PertesPostRecolte = () => {
     mutationFn: async (id: string) => { const { error } = await supabase.from("pertes_postrecolte").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["pertes_postrecolte"] }); toast.success("Incident supprimé"); },
   });
+
+  const filteredPertes = useMemo(() => {
+    return pertes.filter((p: any) => {
+      const matchSearch = !search || 
+        p.produit.toLowerCase().includes(search.toLowerCase()) || 
+        (p.zone || "").toLowerCase().includes(search.toLowerCase());
+      const matchCause = causeFilter === "tous" || p.cause === causeFilter;
+      return matchSearch && matchCause;
+    });
+  }, [pertes, search, causeFilter]);
+
+  const totalPages = Math.ceil(filteredPertes.length / ITEMS_PER_PAGE);
+  const currentItems = filteredPertes.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+  };
+
+  const handleCauseFilterChange = (val: string) => {
+    setCauseFilter(val);
+    setCurrentPage(1);
+  };
 
   return (
     <DashboardLayout title="Contrôle Qualité & Pertes" subtitle="Suivi des dépréciations et incidents post-récolte">
@@ -253,6 +284,34 @@ const PertesPostRecolte = () => {
            </div>
         </div>
 
+        {/* Filters - Quantum Refinement */}
+        <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-2 flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+            <Input
+              placeholder="Rechercher par produit ou zone…"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
+            />
+          </div>
+          <div className="flex gap-1 bg-gray-50 p-1 rounded-xl overflow-x-auto">
+            {["tous", ...CAUSES].map((c) => (
+              <button
+                key={c}
+                onClick={() => handleCauseFilterChange(c)}
+                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  causeFilter === c
+                    ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-white"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Ledger Table */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
            <div className="overflow-x-auto">
@@ -270,54 +329,101 @@ const PertesPostRecolte = () => {
                  <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                        <tr><td colSpan={6} className="py-12 text-center text-gray-500"><Loader2 className="animate-spin mx-auto text-emerald-600 mb-2" size={24} /> Chargement...</td></tr>
-                    ) : pertes.length === 0 ? (
-                       <tr><td colSpan={6} className="py-12 text-center text-gray-500">Aucun incident enregistré.</td></tr>
+                    ) : filteredPertes.length === 0 ? (
+                       <tr><td colSpan={6} className="py-12 text-center text-gray-500">Aucun incident trouvé.</td></tr>
                     ) : (
-                       pertes.map((p: any) => {
-                         const taux = p.quantite_initiale > 0 ? ((p.quantite_perdue / p.quantite_initiale) * 100).toFixed(1) : "0.0";
-                         const isCritical = Number(taux) > SEUIL_ALERTE;
-                         return (
-                           <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="px-6 py-4 font-medium text-gray-900">
-                                 {format(new Date(p.date_constat), "dd/MM/yyyy")}
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-gray-900">{p.produit}</p>
-                                 <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><MapPin size={10}/> {p.zone || "N/A"}</p>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-rose-600">-{Number(p.quantite_perdue).toLocaleString()} {p.unite}</p>
-                                 <p className="text-xs text-gray-500 mt-0.5">sur {Number(p.quantite_initiale).toLocaleString()} {p.unite}</p>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <Badge variant="outline" className={cn("font-medium", isCritical ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-emerald-50 text-emerald-600 border-emerald-200")}>
-                                    {taux}%
-                                 </Badge>
-                              </td>
-                              <td className="px-6 py-4 text-gray-600 font-medium">
-                                 {p.cause}
-                              </td>
-                              {isAdmin && (
-                                 <td className="px-6 py-4 text-right">
-                                  <Button variant="ghost" size="icon" onClick={() => {
-                                    confirm({
-                                      title: "Supprimer l'incident",
-                                      description: `Voulez-vous supprimer cet enregistrement de perte pour "${p.produit}" ? Cette action est irréversible.`,
-                                      confirmLabel: "Supprimer",
-                                      variant: "danger",
-                                      onConfirm: () => deleteMutation.mutate(p.id),
-                                    });
-                                  }} className="h-8 w-8 text-rose-500 hover:bg-rose-50"><Trash2 size={14}/></Button>
+                       currentItems.map((p: any) => {
+                          const taux = p.quantite_initiale > 0 ? ((p.quantite_perdue / p.quantite_initiale) * 100).toFixed(1) : "0.0";
+                          const isCritical = Number(taux) > SEUIL_ALERTE;
+                          return (
+                            <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                               <td className="px-6 py-4 font-medium text-gray-900">
+                                  {format(new Date(p.date_constat), "dd/MM/yyyy")}
                                </td>
-                              )}
-                           </tr>
-                         );
+                               <td className="px-6 py-4">
+                                  <p className="font-bold text-gray-900">{p.produit}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><MapPin size={10}/> {p.zone || "N/A"}</p>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <p className="font-bold text-rose-600">-{Number(p.quantite_perdue).toLocaleString()} {p.unite}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">sur {Number(p.quantite_initiale).toLocaleString()} {p.unite}</p>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <Badge variant="outline" className={cn("font-medium", isCritical ? "bg-rose-50 text-rose-600 border-rose-200" : "bg-emerald-50 text-emerald-600 border-emerald-200")}>
+                                     {taux}%
+                                  </Badge>
+                               </td>
+                               <td className="px-6 py-4 text-gray-600 font-medium">
+                                  {p.cause}
+                               </td>
+                               {isAdmin && (
+                                  <td className="px-6 py-4 text-right">
+                                   <Button variant="ghost" size="icon" onClick={() => {
+                                     confirm({
+                                       title: "Supprimer l'incident",
+                                       description: `Voulez-vous supprimer cet enregistrement de perte pour "${p.produit}" ? Cette action est irréversible.`,
+                                       confirmLabel: "Supprimer",
+                                       variant: "danger",
+                                       onConfirm: () => deleteMutation.mutate(p.id),
+                                     });
+                                   }} className="h-8 w-8 text-rose-500 hover:bg-rose-50"><Trash2 size={14}/></Button>
+                                </td>
+                               )}
+                            </tr>
+                          );
                        })
                     )}
                  </tbody>
               </table>
            </div>
          </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm mt-4">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+              Affichage de {(currentPage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filteredPertes.length)} sur {filteredPertes.length} incidents
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-xl border-gray-100 hover:bg-gray-50 h-9 w-9"
+              >
+                <ChevronLeft size={14} />
+              </Button>
+              
+              <div className="flex items-center gap-1.5 mx-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={cn(
+                      "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                      currentPage === p
+                        ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10"
+                        : "text-gray-400 hover:bg-gray-50"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-xl border-gray-100 hover:bg-gray-50 h-9 w-9"
+              >
+                <ChevronRight size={14} />
+              </Button>
+            </div>
+          </div>
+        )}
 
       {/* Entry Dialog - Premium Design */}
       <Dialog open={open} onOpenChange={setOpen}>

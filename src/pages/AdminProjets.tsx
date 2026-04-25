@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Pencil, Trash2, Upload, X, ImageIcon, Loader2, Search,
   Zap, Sprout, Droplets, Users, Globe, TrendingUp, Leaf, Building, Star,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,6 +114,8 @@ const AdminProjets = () => {
   const [form, setForm] = useState<ProjectForm>(EMPTY_FORM);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // ── Query ──
   const { data: projects = [], isLoading } = useQuery({
@@ -242,6 +245,22 @@ const AdminProjets = () => {
     return matchStatus && matchSearch;
   });
 
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentItems = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (val: "tous" | Project["status"]) => {
+    setStatusFilter(val);
+    setCurrentPage(1);
+  };
+
   const counts = {
     total: projects.length,
     en_cours: projects.filter((p) => p.status === "en_cours").length,
@@ -314,7 +333,7 @@ const AdminProjets = () => {
             <Input
               placeholder="Rechercher par identité de programme…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
             />
           </div>
@@ -322,7 +341,7 @@ const AdminProjets = () => {
             {[{ key: "tous", label: "Tous" }, ...STATUS_OPTIONS.map((o) => ({ key: o.value, label: o.label }))].map((f) => (
               <button
                 key={f.key}
-                onClick={() => setStatusFilter(f.key as any)}
+                onClick={() => handleStatusFilterChange(f.key as any)}
                 className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                   statusFilter === f.key
                     ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
@@ -344,7 +363,7 @@ const AdminProjets = () => {
           <div className="text-center py-20 text-gray-400 text-sm">Aucun projet trouvé.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((project) => {
+            {currentItems.map((project) => {
               const Icon = ICON_MAP[project.icon_name] ?? TrendingUp;
               const cfg = STATUS_CONFIG[project.status];
               return (
@@ -429,6 +448,53 @@ const AdminProjets = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[2.5rem] border border-gray-100 shadow-sm">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4">
+              Affichage de {(currentPage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length} programmes
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-2xl border-gray-100 hover:bg-gray-50 h-10 w-10"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              
+              <div className="flex items-center gap-1.5 mx-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={cn(
+                      "h-10 w-10 rounded-2xl text-xs font-black transition-all duration-300",
+                      currentPage === p
+                        ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10"
+                        : "text-gray-400 hover:bg-gray-50"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-2xl border-gray-100 hover:bg-gray-50 h-10 w-10"
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
           </div>
         )}
       </div>

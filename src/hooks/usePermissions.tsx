@@ -29,17 +29,21 @@ export const ALL_MODULES = [
   { key: "blog",              label: "Blog / Contenu",        group: "Communication" },
   { key: "projets",           label: "Projets",               group: "Communication" },
   { key: "campagnes_email",   label: "Campagnes Email",       group: "Communication" },
+  { key: "taches",                  label: "Mes Tâches",                  group: "Personnel" },
+  { key: "mon_espace",              label: "Mon Espace Membre",           group: "Personnel" },
+  { key: "producteurs_ecriture",    label: "Producteurs — Écriture",      group: "Droits d'écriture" },
+  { key: "vergers_ecriture",        label: "Vergers — Écriture",          group: "Droits d'écriture" },
 ];
 
 // Default module access per role
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  commercial: ["dashboard", "marketplace", "commandes", "precommandes", "demandes", "logistique", "messages", "clients", "performances"],
-  marketing:  ["dashboard", "tendances", "prix_marche", "messages", "demandes", "performances", "blog", "projets", "campagnes_email"],
-  technique:  ["dashboard", "producteurs", "vergers", "recoltes", "stocks", "intelligence", "pertes"],
-  admin:      ALL_MODULES.map(m => m.key),
+  commercial: ["dashboard", "marketplace", "commandes", "precommandes", "demandes", "logistique", "messages", "clients", "performances", "taches"],
+  marketing:  ["dashboard", "tendances", "prix_marche", "messages", "demandes", "performances", "blog", "projets", "campagnes_email", "taches"],
+  technique:  ["dashboard", "producteurs", "vergers", "recoltes", "stocks", "intelligence", "pertes", "taches"],
+  admin:      ALL_MODULES.filter(m => m.group !== "Droits d'écriture").map(m => m.key),
   superadmin: ALL_MODULES.map(m => m.key),
-  producteur: ALL_MODULES.map(m => m.key),
-  acheteur:   ALL_MODULES.map(m => m.key),
+  producteur: ["dashboard", "mon_espace", "taches"],
+  acheteur:   ["dashboard", "marketplace", "commandes", "taches"],
 };
 
 export type Permission = { id: string; user_id: string; module: string; can_access: boolean };
@@ -76,6 +80,7 @@ export const useMyPermissions = () => {
   });
 
   const isPrivileged = roles?.some(r => r === "admin" || r === "superadmin" || r === "producteur" || r === "acheteur");
+  const isSuperAdmin = roles?.includes("superadmin") ?? false;
 
   const { data: permissions } = useQuery({
     queryKey: ["my-permissions", user?.id],
@@ -87,7 +92,7 @@ export const useMyPermissions = () => {
         .eq("user_id", user.id);
       return (data || []) as unknown as Permission[];
     },
-    enabled: !!user && !isPrivileged,
+    enabled: !!user,
     staleTime: 60_000,
   });
 
@@ -98,11 +103,19 @@ export const useMyPermissions = () => {
     return perm ? perm.can_access : false;
   };
 
+  // Séparé de hasAccess : seul le superadmin OU permission explicite accordée
+  const canWrite = (module: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (!permissions || permissions.length === 0) return false;
+    const perm = permissions.find(p => p.module === `${module}_ecriture`);
+    return perm ? perm.can_access : false;
+  };
+
   const allowedModules = isPrivileged
     ? ALL_MODULES.map(m => m.key)
     : (permissions || []).filter(p => p.can_access).map(p => p.module);
 
-  return { hasAccess, allowedModules, roles, isPrivileged };
+  return { hasAccess, canWrite, allowedModules, roles, isPrivileged, isSuperAdmin };
 };
 
 // ─── Save permissions for a user ─────────────────────────────────────────────

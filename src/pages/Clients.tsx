@@ -380,26 +380,79 @@ const Clients = () => {
                 </table>
               </div>
 
-              {/* Pagination - Premium Quantum Design */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-8 py-4 border-t border-gray-100 bg-gray-50/50">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-                    Index {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, visible.length)} sur {visible.length}
-                  </p>
-                  <div className="flex gap-3">
+              {/* Premium Pagination */}
+              {totalPages > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-gray-100 bg-gray-50/50 gap-4">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    Index {page * PAGE_SIZE + 1} – {Math.min((page + 1) * PAGE_SIZE, visible.length)} sur {visible.length} clients
+                  </div>
+                  
+                  <div className="flex items-center gap-1.5">
                     <Button 
                       variant="outline" 
-                      onClick={() => setPage(p => Math.max(0, p - 1))} 
-                      disabled={page === 0}
-                      className="h-9 w-9 rounded-xl border-gray-200 p-0 hover:bg-white transition-all shadow-sm disabled:opacity-30"
+                      size="icon"
+                      onClick={() => setPage(Math.max(0, page - 1))} 
+                      disabled={page === 0} 
+                      className="h-9 w-9 rounded-xl border-gray-100 bg-white text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
                     >
                       <ChevronLeft size={16} />
                     </Button>
+
+                    {totalPages <= 7 ? (
+                      Array.from({ length: totalPages }, (_, i) => (
+                        <Button
+                          key={i}
+                          variant={page === i ? "default" : "outline"}
+                          onClick={() => setPage(i)}
+                          className={cn(
+                            "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                            page === i 
+                              ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                              : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                          )}
+                        >
+                          {i + 1}
+                        </Button>
+                      ))
+                    ) : (
+                      <>
+                        {[0, 1, 2].map(i => (
+                          <Button
+                            key={i}
+                            variant={page === i ? "default" : "outline"}
+                            onClick={() => setPage(i)}
+                            className={cn(
+                              "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                              page === i 
+                                ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                                : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                            )}
+                          >
+                            {i + 1}
+                          </Button>
+                        ))}
+                        <span className="px-1 text-gray-300">...</span>
+                        <Button
+                          variant={page === totalPages - 1 ? "default" : "outline"}
+                          onClick={() => setPage(totalPages - 1)}
+                          className={cn(
+                            "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                            page === totalPages - 1 
+                              ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20" 
+                              : "border-gray-100 bg-white text-gray-500 hover:bg-gray-50"
+                          )}
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+
                     <Button 
                       variant="outline" 
-                      onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} 
-                      disabled={page >= totalPages - 1}
-                      className="h-9 w-9 rounded-xl border-gray-200 p-0 hover:bg-white transition-all shadow-sm disabled:opacity-30"
+                      size="icon"
+                      onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                      disabled={page >= totalPages - 1} 
+                      className="h-9 w-9 rounded-xl border-gray-100 bg-white text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
                     >
                       <ChevronRight size={16} />
                     </Button>

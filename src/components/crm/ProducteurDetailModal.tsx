@@ -17,7 +17,7 @@ import {
 import {
   MapPin, Phone, Mail, Calendar, Leaf, Award, Package, TrendingUp,
   Users, PiggyBank, Plus, Pencil, Trash2, Loader2, CheckCircle,
-  Clock, XCircle, Building2, X, Sprout, Building
+  Clock, XCircle, Building2, X, Sprout, Building, Hash, UserCircle, Navigation,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -229,7 +229,7 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
     <>
       <EmpFormDialog />
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden p-0 border border-black/5 bg-[#FDFCFB] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.4)] rounded-[2rem]">
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden p-0 border border-white/[0.06] bg-[#080F09] shadow-[0_30px_100px_-15px_rgba(0,0,0,0.7)] rounded-[2rem]">
           <div className="flex flex-col max-h-[92vh]">
 
             {/* ── Header Institutionnel ────────────────────────── */}
@@ -261,6 +261,18 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                         {producteur.statut_actif === false ? "Inactif" : "Actif"}
                       </div>
                     </div>
+                    <div className="flex items-center gap-4 flex-wrap mb-2">
+                      {producteur.numero_membre && (
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                          <Hash size={10} />{producteur.numero_membre}
+                        </span>
+                      )}
+                      {producteur.genre && (
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-white/60 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                          <UserCircle size={10} />{producteur.genre}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-5 text-white/60 text-xs flex-wrap font-medium">
                       <span className="flex items-center gap-2"><MapPin size={14} className="text-white/40"/> {producteur.localisation}</span>
                       {producteur.date_adhesion && (
@@ -277,8 +289,8 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
             </div>
 
             {/* ── Tabs ──────────────────────────────────────────── */}
-            <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col bg-[#FDFCFB]">
-              <TabsList className="rounded-none border-b border-black/[0.05] bg-white h-14 px-8 flex-shrink-0 justify-start gap-8 overflow-x-auto">
+            <Tabs defaultValue="overview" className="flex-1 overflow-hidden flex flex-col bg-[#080F09]">
+              <TabsList className="rounded-none border-b border-white/[0.06] bg-[#0B1A12]/80 h-14 px-8 flex-shrink-0 justify-start gap-8 overflow-x-auto">
                 {[
                   { v: "overview", icon: TrendingUp, label: "Vue d'ensemble" },
                   { v: "exploitation", icon: Sprout, label: "Exploitation" },
@@ -287,30 +299,30 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                   { v: "finances", icon: Package, label: "Finances" },
                 ].map(t => (
                   <TabsTrigger key={t.v} value={t.v}
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary h-full rounded-none gap-2.5 text-[11px] font-bold tracking-widest px-2 py-0 flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors border-b-2 border-transparent relative top-[1px]">
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-emerald-400 data-[state=active]:text-emerald-400 h-full rounded-none gap-2.5 text-[11px] font-bold tracking-widest px-2 py-0 flex-shrink-0 text-white/40 hover:text-white/70 transition-colors border-b-2 border-transparent relative top-[1px]">
                     <t.icon size={15} /> {t.label.toUpperCase()}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto bg-[#080F09]">
 
                 {/* ── Onglet 1 : Vue d'ensemble ──────────────────── */}
-                <TabsContent value="overview" className="p-6 md:p-8 m-0 space-y-6">
-                  {/* KPIs Premium */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <TabsContent value="overview" className="p-6 md:p-8 m-0 space-y-5 bg-[#080F09]">
+                  {/* KPIs */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                      { label: "Production Totale", value: `${totalProd.toLocaleString()} T`, icon: Package, color: "text-emerald-700", bg: "bg-emerald-50", iconCol: "text-emerald-600" },
-                      { label: "Revenu Est. (Total)", value: `${(totalRevenuEst / 1000).toLocaleString()}k F`, icon: TrendingUp, color: "text-amber-700", bg: "bg-amber-50", iconCol: "text-amber-600" },
-                      { label: "Équipe Active",     value: `${nbActifs} pers.`,    icon: Users,    color: "text-blue-700",  bg: "bg-blue-50", iconCol: "text-blue-600" },
-                      { label: "Cotisations Payées",     value: `${(totalCotis / 1000).toFixed(0)}k F`, icon: PiggyBank, color: "text-teal-700", bg: "bg-teal-50", iconCol: "text-teal-600" },
+                      { label: "Production Totale", value: `${totalProd.toLocaleString()} T`, icon: Package, color: "text-emerald-400", bg: "bg-emerald-500/15", iconCol: "text-emerald-400", glow: "shadow-emerald-500/10" },
+                      { label: "Revenu Est. (Total)", value: totalRevenuEst > 0 ? `${(totalRevenuEst / 1000).toLocaleString()}k F` : "0 F", icon: TrendingUp, color: "text-amber-400", bg: "bg-amber-500/15", iconCol: "text-amber-400", glow: "shadow-amber-500/10" },
+                      { label: "Équipe Active", value: `${nbActifs} pers.`, icon: Users, color: "text-blue-400", bg: "bg-blue-500/15", iconCol: "text-blue-400", glow: "shadow-blue-500/10" },
+                      { label: "Cotisations Payées", value: totalCotis > 0 ? `${(totalCotis / 1000).toFixed(0)}k F` : "0 F", icon: PiggyBank, color: "text-teal-400", bg: "bg-teal-500/15", iconCol: "text-teal-400", glow: "shadow-teal-500/10" },
                     ].map(k => (
-                      <div key={k.label} className="bg-white rounded-[1.25rem] p-5.5 px-6 border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col justify-between group hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:border-black/[0.06] transition-all min-h-[140px]">
-                        <div className={`h-11 w-11 rounded-[0.85rem] ${k.bg} flex items-center justify-center mb-4 transition-transform group-hover:scale-105`}>
-                          <k.icon size={20} className={k.iconCol} />
+                      <div key={k.label} className={`bg-white/[0.04] rounded-[1.25rem] p-5 px-5 border border-white/[0.07] flex flex-col justify-between group hover:bg-white/[0.07] hover:border-white/[0.12] transition-all min-h-[130px] shadow-lg ${k.glow}`}>
+                        <div className={`h-10 w-10 rounded-[0.75rem] ${k.bg} flex items-center justify-center mb-3 transition-transform group-hover:scale-110`}>
+                          <k.icon size={18} className={k.iconCol} />
                         </div>
                         <div>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">{k.label}</p>
+                          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-1">{k.label}</p>
                           <p className={`text-2xl font-black tracking-tight ${k.color}`}>{k.value}</p>
                         </div>
                       </div>
@@ -318,113 +330,123 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                   </div>
 
                   {/* Graphique Production */}
-                  <div className="bg-white rounded-[1.25rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
-                    <div className="px-6 py-5 border-b border-black/[0.04] flex items-center justify-between">
-                      <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <TrendingUp size={14} className="text-gray-300"/> Production par Année
-                      </h3>
+                  <div className="bg-white/[0.04] rounded-[1.25rem] border border-white/[0.07] overflow-hidden">
+                    <div className="px-6 py-4 border-b border-white/[0.06] flex items-center gap-2">
+                      <TrendingUp size={13} className="text-emerald-400/60"/>
+                      <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Production par Année</h3>
                     </div>
-                    <div className="p-6 h-72">
+                    <div className="p-6 h-64">
                       {productionParAnnee.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={productionParAnnee} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--muted))" vertical={false} />
-                            <XAxis dataKey="annee" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} dy={10} />
-                            <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} dx={-10} />
-                            <Tooltip formatter={(v) => [`${v} T`, "Production"]} cursor={{ fill: 'hsl(var(--muted)/0.3)' }} contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", padding: "12px" }} />
-                            <Bar dataKey="production" fill="#0B1A12" radius={[6, 6, 0, 0]} maxBarSize={60} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis dataKey="annee" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.35)' }} tickLine={false} axisLine={false} dy={10} />
+                            <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.35)' }} tickLine={false} axisLine={false} dx={-10} />
+                            <Tooltip formatter={(v) => [`${v} T`, "Production"]} cursor={{ fill: 'rgba(255,255,255,0.04)' }} contentStyle={{ background: "#0F2318", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.4)", padding: "12px", color: "#fff" }} />
+                            <Bar dataKey="production" fill="#4ADE80" radius={[6, 6, 0, 0]} maxBarSize={60} />
                           </BarChart>
                         </ResponsiveContainer>
                       ) : (
-                        <div className="h-full flex items-center justify-center text-sm text-muted-foreground font-medium">Aucune récolte enregistrée</div>
+                        <div className="h-full flex flex-col items-center justify-center gap-3 text-white/30">
+                          <Package size={32} className="opacity-40" />
+                          <p className="text-sm font-medium">Aucune récolte enregistrée</p>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* Coordonnées & Cultures Row */}
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-[1.25rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-6 space-y-5">
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <MapPin size={14} className="text-gray-300"/> Coordonnées
+                    <div className="bg-white/[0.04] rounded-[1.25rem] border border-white/[0.07] p-6 space-y-4">
+                      <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                        <MapPin size={13} className="text-emerald-400/60"/> Coordonnées
                       </p>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {producteur.telephone && (
                           <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-center flex-shrink-0"><Phone size={16} /></div>
-                            <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Téléphone</p><p className="text-sm font-semibold">{producteur.telephone}</p></div>
+                            <div className="h-9 w-9 rounded-xl bg-white/[0.06] text-white/50 flex items-center justify-center flex-shrink-0"><Phone size={15} /></div>
+                            <div><p className="text-[10px] text-white/30 font-bold uppercase tracking-wider mb-0.5">Téléphone</p><p className="text-sm font-semibold text-white/80">{producteur.telephone}</p></div>
                           </div>
                         )}
                         {producteur.email && (
                           <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-gray-50 text-gray-500 flex items-center justify-center flex-shrink-0"><Mail size={16} /></div>
-                            <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Email</p><p className="text-sm font-semibold break-all">{producteur.email}</p></div>
+                            <div className="h-9 w-9 rounded-xl bg-white/[0.06] text-white/50 flex items-center justify-center flex-shrink-0"><Mail size={15} /></div>
+                            <div><p className="text-[10px] text-white/30 font-bold uppercase tracking-wider mb-0.5">Email</p><p className="text-sm font-semibold text-white/80 break-all">{producteur.email}</p></div>
                           </div>
                         )}
                         <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0"><Leaf size={16} /></div>
-                          <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Superficie Totale</p><p className="text-sm font-semibold">{producteur.superficie ?? 0} ha</p></div>
+                          <div className="h-9 w-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center flex-shrink-0"><Leaf size={15} /></div>
+                          <div><p className="text-[10px] text-white/30 font-bold uppercase tracking-wider mb-0.5">Superficie Totale</p><p className="text-sm font-semibold text-white/80">{producteur.superficie ?? 0} ha</p></div>
                         </div>
+                        {(producteur.latitude || producteur.longitude) && (
+                          <div className="flex items-center gap-4">
+                            <div className="h-9 w-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center flex-shrink-0"><Navigation size={15} /></div>
+                            <div>
+                              <p className="text-[10px] text-white/30 font-bold uppercase tracking-wider mb-0.5">Coordonnées GPS</p>
+                              <a href={`https://maps.google.com/?q=${producteur.latitude},${producteur.longitude}`} target="_blank" rel="noreferrer" className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline transition-colors">
+                                {Number(producteur.latitude).toFixed(5)}, {Number(producteur.longitude).toFixed(5)}
+                              </a>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-[1.25rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-6">
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                        <Sprout size={14} className="text-gray-300"/> Cultures Pratiquées
+                    <div className="bg-white/[0.04] rounded-[1.25rem] border border-white/[0.07] p-6">
+                      <p className="text-[11px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2 mb-5">
+                        <Sprout size={13} className="text-emerald-400/60"/> Cultures Pratiquées
                       </p>
                       <div className="flex flex-wrap gap-2.5">
                         {(producteur.cultures || []).map((c: string) => (
-                          <span key={c} className="px-4 py-2 rounded-xl bg-emerald-500/[0.06] text-emerald-700 text-xs font-bold tracking-wide border border-emerald-500/10 transition-colors hover:bg-emerald-500/10">
+                          <span key={c} className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-bold tracking-wide border border-emerald-500/20 transition-colors hover:bg-emerald-500/20">
                             {c}
                           </span>
                         ))}
-                        {!producteur.cultures?.length && <p className="text-sm text-gray-400 italic">Aucune culture enregistrée</p>}
+                        {!producteur.cultures?.length && <p className="text-sm text-white/30 italic">Aucune culture enregistrée</p>}
                       </div>
                     </div>
                   </div>
                 </TabsContent>
 
                 {/* ── Onglet 2 : Exploitation ────────────────────── */}
-                <TabsContent value="exploitation" className="p-6 md:p-8 m-0 space-y-6 bg-[#FDFCFB]">
-                  <div className="flex items-center justify-between pb-2 border-b border-black/[0.04] mb-6">
-                    <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <Sprout size={14} className="text-gray-400" /> Vos Vergers & Parcelles
+                <TabsContent value="exploitation" className="p-6 md:p-8 m-0 space-y-6 bg-[#080F09]">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] mb-6">
+                    <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                      <Sprout size={14} className="text-emerald-400/60" /> Vos Vergers & Parcelles
                     </h3>
-                    <Badge variant="outline" className="text-gray-500 font-bold bg-white text-[10px] tracking-wider rounded-lg px-2">
+                    <Badge variant="outline" className="text-white/50 font-bold bg-white/[0.05] border-white/10 text-[10px] tracking-wider rounded-lg px-2">
                        {producteur.vergers?.length || 0} TOTAL
                     </Badge>
                   </div>
 
                   {!(producteur.vergers?.length) ? (
-                    <div className="text-center py-20 bg-white rounded-[1.5rem] border border-dashed border-gray-200">
-                      <Sprout size={40} className="mx-auto mb-4 text-gray-300" />
-                      <p className="text-sm text-gray-500 font-medium">Aucun verger enregistré – ajoutez-en depuis le module Vergers</p>
+                    <div className="text-center py-20 bg-white/[0.03] rounded-[1.5rem] border border-dashed border-white/[0.08]">
+                      <Sprout size={40} className="mx-auto mb-4 text-white/20" />
+                      <p className="text-sm text-white/40 font-medium">Aucun verger enregistré – ajoutez-en depuis le module Vergers</p>
                     </div>
                   ) : (
                     <div className="grid md:grid-cols-2 gap-5">
                       {producteur.vergers.map((v: any) => (
-                        <div key={v.id} className="bg-white rounded-[1.5rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-6 hover:shadow-[0_12px_40px_rgb(0,0,0,0.06)] hover:border-black/[0.08] transition-all group">
+                        <div key={v.id} className="bg-white/[0.04] rounded-[1.5rem] border border-white/[0.07] p-6 hover:bg-white/[0.07] hover:border-white/[0.12] transition-all group">
                           <div className="flex items-start justify-between mb-5">
                             <div>
-                              <h4 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{v.nom}</h4>
+                              <h4 className="text-lg font-bold text-white/90 group-hover:text-emerald-400 transition-colors">{v.nom}</h4>
                               <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest
-                                ${v.etat === "Excellent" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : v.etat === "Bon" ? "bg-blue-50 text-blue-600 border border-blue-100" : "bg-amber-50 text-amber-600 border border-amber-100"}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${v.etat === "Excellent" ? "bg-emerald-500" : v.etat === "Bon" ? "bg-blue-500" : "bg-amber-500"}`} />
+                                ${v.etat === "Excellent" ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25" : v.etat === "Bon" ? "bg-blue-500/15 text-blue-400 border border-blue-500/25" : "bg-amber-500/15 text-amber-400 border border-amber-500/25"}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${v.etat === "Excellent" ? "bg-emerald-400" : v.etat === "Bon" ? "bg-blue-400" : "bg-amber-400"}`} />
                                 {v.etat}
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-3xl font-black text-gray-900 leading-none">
-                                {v.superficie || 0}
-                              </p>
-                              <span className="text-xs font-bold text-gray-400 tracking-wider">HA</span>
+                              <p className="text-3xl font-black text-white/90 leading-none">{v.superficie || 0}</p>
+                              <span className="text-xs font-bold text-white/30 tracking-wider">HA</span>
                             </div>
                           </div>
-                          
-                          <div className="pt-5 border-t border-black/[0.04] space-y-3">
-                            {v.zone && <div className="flex items-center gap-3 text-sm text-gray-600"><MapPin size={15} className="text-gray-400" /><span className="font-medium">{v.zone}</span></div>}
-                            {v.localisation && <div className="flex items-center gap-3 text-sm text-gray-600"><Building2 size={15} className="text-gray-400" /><span className="font-medium">{v.localisation}</span></div>}
-                            <div className="flex items-center gap-3 text-sm text-gray-600"><Leaf size={15} className="text-gray-400" /><span className="font-medium">{v.culture}</span></div>
-                            {v.estimation_rendement && <div className="flex items-center gap-3 text-sm text-primary font-semibold"><TrendingUp size={15} className="text-primary/70" /><span>Rendement: {v.estimation_rendement} T/ha</span></div>}
+                          <div className="pt-4 border-t border-white/[0.06] space-y-2.5">
+                            {v.zone && <div className="flex items-center gap-3 text-sm text-white/60"><MapPin size={14} className="text-white/30" /><span className="font-medium">{v.zone}</span></div>}
+                            {v.localisation && <div className="flex items-center gap-3 text-sm text-white/60"><Building2 size={14} className="text-white/30" /><span className="font-medium">{v.localisation}</span></div>}
+                            <div className="flex items-center gap-3 text-sm text-white/60"><Leaf size={14} className="text-white/30" /><span className="font-medium">{v.culture}</span></div>
+                            {v.estimation_rendement && <div className="flex items-center gap-3 text-sm text-emerald-400 font-semibold"><TrendingUp size={14} className="text-emerald-400/70" /><span>Rendement: {v.estimation_rendement} T/ha</span></div>}
                           </div>
                         </div>
                       ))}
@@ -433,64 +455,64 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                 </TabsContent>
 
                 {/* ── Onglet 3 : Équipe ──────────────────────────── */}
-                <TabsContent value="equipe" className="p-6 md:p-8 m-0 space-y-6 bg-[#FDFCFB]">
-                  <div className="flex items-center justify-between pb-2 border-b border-black/[0.04] mb-6">
-                    <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <Users size={14} className="text-gray-400" /> Annuaire du Personnel
+                <TabsContent value="equipe" className="p-6 md:p-8 m-0 space-y-6 bg-[#080F09]">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] mb-6">
+                    <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                      <Users size={14} className="text-white/30" /> Annuaire du Personnel
                     </h3>
                     {isAdmin && (
-                      <Button className="rounded-xl font-bold tracking-wide h-10 px-5 bg-[#0B1A12] text-white hover:bg-primary shadow-[0_10px_20px_rgba(0,0,0,0.1)] transition-all" onClick={() => { setEmpForm(defaultEmpForm); setEmpFormOpen(true); }}>
+                      <Button className="rounded-xl font-bold tracking-wide h-10 px-5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/25 shadow-none transition-all" onClick={() => { setEmpForm(defaultEmpForm); setEmpFormOpen(true); }}>
                         <Plus size={16} className="mr-2" /> Ajouter
                       </Button>
                     )}
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 mb-6">
                     {[
-                      { label: "Total employés", value: employees.length, cls: "text-gray-900" },
-                      { label: "Prisés (Actifs)", value: nbActifs, cls: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
-                      { label: "Contrats CDI", value: employees.filter(e => e.type_contrat === "CDI").length, cls: "text-blue-600" },
+                      { label: "Total employés", value: employees.length, cls: "text-white/90" },
+                      { label: "Actifs", value: nbActifs, cls: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                      { label: "Contrats CDI", value: employees.filter(e => e.type_contrat === "CDI").length, cls: "text-blue-400" },
                     ].map((s, i) => (
-                       <div key={i} className={`rounded-2xl p-5 border shadow-[0_4px_20px_rgb(0,0,0,0.02)] flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-1 ${s.bg || 'bg-white border-black/[0.04]'}`}>
+                       <div key={i} className={`rounded-2xl p-5 border flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-1 ${s.bg || 'bg-white/[0.04] border-white/[0.07]'}`}>
                          <p className={`text-3xl font-black mb-1.5 ${s.cls}`}>{s.value}</p>
-                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{s.label}</p>
+                         <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{s.label}</p>
                        </div>
                     ))}
                   </div>
 
                   {employees.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-[1.5rem] border border-dashed border-gray-200">
-                      <Users size={40} className="mx-auto mb-4 text-gray-300" /><p className="text-sm font-medium text-gray-500">Créer le premier profil d'employé</p>
+                    <div className="text-center py-20 bg-white/[0.03] rounded-[1.5rem] border border-dashed border-white/[0.08]">
+                      <Users size={40} className="mx-auto mb-4 text-white/20" /><p className="text-sm font-medium text-white/40">Créer le premier profil d'employé</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {employees.map(emp => (
-                        <div key={emp.id} className="bg-white rounded-2xl border border-black/[0.04] shadow-[0_4px_20px_rgb(0,0,0,0.02)] p-4 flex items-center justify-between group hover:border-black/[0.08] transition-all">
+                        <div key={emp.id} className="bg-white/[0.04] rounded-2xl border border-white/[0.07] p-4 flex items-center justify-between group hover:bg-white/[0.07] hover:border-white/[0.12] transition-all">
                           <div className="flex items-center gap-5">
-                            <div className="h-12 w-12 rounded-xl bg-gray-50 border border-gray-100 text-gray-400 flex items-center justify-center font-bold text-lg flex-shrink-0 group-hover:bg-primary/5 group-hover:text-primary transition-all">
+                            <div className="h-12 w-12 rounded-xl bg-white/[0.07] border border-white/10 text-white/40 flex items-center justify-center font-bold text-lg flex-shrink-0 group-hover:bg-emerald-500/15 group-hover:text-emerald-400 transition-all">
                               {emp.nom_complet.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
                                <div className="flex items-center gap-3 mb-1">
-                                 <p className="font-bold text-gray-900 text-base">{emp.nom_complet}</p>
+                                 <p className="font-bold text-white/90 text-base">{emp.nom_complet}</p>
                                  <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
-                                  ${emp.statut_actif !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"}`}>
+                                  ${emp.statut_actif !== false ? "bg-emerald-500/15 text-emerald-400" : "bg-white/[0.06] text-white/40"}`}>
                                    {emp.statut_actif !== false ? "Actif" : "Inactif"}
                                  </div>
                                </div>
-                               <div className="flex items-center gap-4 text-[11px] font-medium text-gray-500">
-                                 <span className="text-primary font-bold">{emp.poste}</span>
-                                 <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-gray-300"/>{emp.type_contrat}</span>
+                               <div className="flex items-center gap-4 text-[11px] font-medium text-white/40">
+                                 <span className="text-emerald-400 font-bold">{emp.poste}</span>
+                                 <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-white/20"/>{emp.type_contrat}</span>
                                  {emp.telephone && <span className="flex items-center gap-1.5"><Phone size={10} />{emp.telephone}</span>}
                                  {emp.date_embauche && <span className="flex items-center gap-1.5"><Calendar size={10} />Depuis {format(new Date(emp.date_embauche), "MM/yyyy")}</span>}
                                </div>
                             </div>
                           </div>
-                          
+
                           {isAdmin && (
                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-gray-200 text-gray-500 hover:text-primary hover:border-primary/30 hover:bg-primary/5" onClick={() => openEditEmp(emp)}><Pencil size={15} /></Button>
-                              <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50"
+                              <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-white/10 text-white/40 hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-emerald-500/10 bg-transparent" onClick={() => openEditEmp(emp)}><Pencil size={15} /></Button>
+                              <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-white/10 text-white/40 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 bg-transparent"
                                 onClick={() => { if (confirm("Supprimer cet employé ?")) deleteEmp.mutate(emp.id); }}>
                                 <Trash2 size={15} />
                               </Button>
@@ -503,42 +525,42 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                 </TabsContent>
 
                 {/* ── Onglet 4 : Cotisations (sync auto) ─────────── */}
-                <TabsContent value="cotisations" className="p-6 md:p-8 m-0 space-y-6 bg-[#FDFCFB]">
-                  <div className="flex items-center justify-between pb-2 border-b border-black/[0.04] mb-6">
-                    <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <PiggyBank size={14} className="text-gray-400" /> État des Cotisations
+                <TabsContent value="cotisations" className="p-6 md:p-8 m-0 space-y-6 bg-[#080F09]">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] mb-6">
+                    <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                      <PiggyBank size={14} className="text-white/30" /> État des Cotisations
                     </h3>
-                    <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5 uppercase tracking-widest shadow-sm">
-                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> SYNC LIVE
+                    <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1.5 uppercase tracking-widest">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> SYNC LIVE
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
                      {[
-                       { label: "Total Réglé", value: `${totalCotis.toLocaleString()} FCFA`, cls: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
-                       { label: "Transactions", value: cotisations.filter((c: any) => c.statut === "Payé").length, cls: "text-gray-900" },
-                       { label: "Reste à payer", value: `${cotisations.filter((c: any) => c.statut !== "Payé").reduce((s: number, c: any) => s + Number(c.montant), 0).toLocaleString()} F`, cls: "text-amber-600", bg: "bg-amber-50 border-amber-100" },
+                       { label: "Total Réglé", value: `${totalCotis.toLocaleString()} F`, cls: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+                       { label: "Transactions", value: cotisations.filter((c: any) => c.statut === "Payé").length, cls: "text-white/90" },
+                       { label: "Reste à payer", value: `${cotisations.filter((c: any) => c.statut !== "Payé").reduce((s: number, c: any) => s + Number(c.montant), 0).toLocaleString()} F`, cls: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
                      ].map((s, i) => (
-                        <div key={i} className={`rounded-2xl p-5 border shadow-[0_4px_20px_rgb(0,0,0,0.02)] flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-1 ${s.bg || 'bg-white border-black/[0.04]'}`}>
+                        <div key={i} className={`rounded-2xl p-5 border flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-1 ${s.bg || 'bg-white/[0.04] border-white/[0.07]'}`}>
                           <p className={`text-2xl font-black mb-1.5 ${s.cls}`}>{s.value}</p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{s.label}</p>
+                          <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{s.label}</p>
                         </div>
                      ))}
                   </div>
 
                   {cotisationsCumul.length > 0 && (
-                    <div className="bg-white rounded-[1.5rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
-                      <div className="px-6 py-5 border-b border-black/[0.04]">
-                         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">Courbe d'accumulation</h3>
+                    <div className="bg-white/[0.04] rounded-[1.5rem] border border-white/[0.07] overflow-hidden">
+                      <div className="px-6 py-4 border-b border-white/[0.06]">
+                         <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Courbe d'accumulation</h3>
                       </div>
                       <div className="p-6 h-52">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={cotisationsCumul} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--muted))" vertical={false} />
-                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} dy={10} />
-                            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} tickLine={false} axisLine={false} dx={-10} />
-                            <Tooltip formatter={(v: number) => [`${v.toLocaleString()} FCFA`, "Cumul"]} contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", padding: "12px" }} />
-                            <Area type="monotone" dataKey="cumul" stroke="#0B1A12" fill="#0B1A1215" strokeWidth={3} name="Cumul" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }} tickLine={false} axisLine={false} dy={10} />
+                            <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} tickLine={false} axisLine={false} dx={-10} />
+                            <Tooltip formatter={(v: number) => [`${v.toLocaleString()} FCFA`, "Cumul"]} contentStyle={{ background: "#0F2318", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.4)", padding: "12px", color: "#fff" }} />
+                            <Area type="monotone" dataKey="cumul" stroke="#F59E0B" fill="rgba(245,158,11,0.1)" strokeWidth={2.5} name="Cumul" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -546,29 +568,29 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                   )}
 
                   {cotisations.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-[1.5rem] border border-dashed border-gray-200">
-                      <PiggyBank size={40} className="mx-auto mb-4 text-gray-300" /><p className="text-sm font-medium text-gray-500">Aucune cotisation enregistrée</p>
+                    <div className="text-center py-16 bg-white/[0.03] rounded-[1.5rem] border border-dashed border-white/[0.08]">
+                      <PiggyBank size={40} className="mx-auto mb-4 text-white/20" /><p className="text-sm font-medium text-white/40">Aucune cotisation enregistrée</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {cotisations.map((c: any) => {
                         const cfg = statutConfig[c.statut] || statutConfig["En attente"];
                         return (
-                          <div key={c.id} className="bg-white rounded-2xl border border-black/[0.04] shadow-[0_4px_20px_rgb(0,0,0,0.02)] p-4 flex items-center justify-between group hover:border-black/[0.08] transition-all">
+                          <div key={c.id} className="bg-white/[0.04] rounded-2xl border border-white/[0.07] p-4 flex items-center justify-between group hover:bg-white/[0.07] hover:border-white/[0.12] transition-all">
                              <div className="flex items-center gap-4">
                                 <div className={`h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.cls}`}><cfg.icon size={18} /></div>
                                 <div>
                                    <div className="flex items-center gap-3 mb-1">
-                                      <p className="font-bold text-gray-900 text-base">{c.periode}</p>
+                                      <p className="font-bold text-white/90 text-base">{c.periode}</p>
                                       <Badge variant="outline" className={`text-[9px] tracking-widest font-bold px-2 py-0.5 rounded-full border ${cfg.cls}`}>{c.statut}</Badge>
                                    </div>
-                                   <div className="flex gap-3 text-[11px] font-medium text-gray-500">
+                                   <div className="flex gap-3 text-[11px] font-medium text-white/40">
                                       <span className="flex items-center gap-1.5"><Calendar size={10}/> {format(new Date(c.date_paiement), "dd MMM yyyy", { locale: fr })}</span>
-                                      {c.mode_paiement && <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-gray-300"/>{c.mode_paiement}</span>}
+                                      {c.mode_paiement && <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-white/20"/>{c.mode_paiement}</span>}
                                    </div>
                                 </div>
                              </div>
-                             <p className="font-black text-xl text-gray-900">{Number(c.montant).toLocaleString()} <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase ml-1">FCFA</span></p>
+                             <p className="font-black text-xl text-white/90">{Number(c.montant).toLocaleString()} <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase ml-1">FCFA</span></p>
                           </div>
                         );
                       })}
@@ -577,50 +599,50 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                 </TabsContent>
 
                 {/* ── Onglet 5 : Finances ────────────────────────── */}
-                <TabsContent value="finances" className="p-6 md:p-8 m-0 space-y-6 bg-[#FDFCFB]">
-                  <div className="flex items-center justify-between pb-2 border-b border-black/[0.04] mb-6">
-                    <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <Package size={14} className="text-gray-400" /> Analyse Financière
+                <TabsContent value="finances" className="p-6 md:p-8 m-0 space-y-6 bg-[#080F09]">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] mb-6">
+                    <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                      <Package size={14} className="text-white/30" /> Analyse Financière
                     </h3>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Revenue bar chart */}
-                    <div className="bg-white rounded-[1.5rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
-                      <div className="px-6 py-5 border-b border-black/[0.04]">
-                         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">Historique Revenus (CFA)</h3>
+                    <div className="bg-white/[0.04] rounded-[1.5rem] border border-white/[0.07] overflow-hidden">
+                      <div className="px-6 py-4 border-b border-white/[0.06]">
+                         <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Historique Revenus (CFA)</h3>
                       </div>
                       <div className="p-6 h-64">
                         {revenueParAnnee.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={revenueParAnnee} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--muted))" vertical={false} />
-                              <XAxis dataKey="annee" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} dy={10} />
-                              <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} tickLine={false} axisLine={false} dx={-10} />
-                              <Tooltip formatter={(v) => [`${Number(v).toLocaleString()} CFA`, "Revenu"]} cursor={{ fill: 'hsl(var(--muted)/0.3)' }} contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", padding: "12px" }} />
-                              <Bar dataKey="revenue" fill="#D58D39" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                              <XAxis dataKey="annee" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }} tickLine={false} axisLine={false} dy={10} />
+                              <YAxis tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.35)' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} tickLine={false} axisLine={false} dx={-10} />
+                              <Tooltip formatter={(v) => [`${Number(v).toLocaleString()} CFA`, "Revenu"]} cursor={{ fill: 'rgba(255,255,255,0.04)' }} contentStyle={{ background: "#0F2318", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.4)", padding: "12px", color: "#fff" }} />
+                              <Bar dataKey="revenue" fill="#F59E0B" radius={[6, 6, 0, 0]} maxBarSize={50} />
                             </BarChart>
                           </ResponsiveContainer>
-                        ) : <div className="h-full flex items-center justify-center text-sm font-medium text-gray-400">Aucun revenu enregistré</div>}
+                        ) : <div className="h-full flex items-center justify-center text-sm font-medium text-white/30">Aucun revenu enregistré</div>}
                       </div>
                     </div>
 
                     {/* Culture pie */}
-                    <div className="bg-white rounded-[1.5rem] border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
-                      <div className="px-6 py-5 border-b border-black/[0.04]">
-                         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">Répartition Culturale</h3>
+                    <div className="bg-white/[0.04] rounded-[1.5rem] border border-white/[0.07] overflow-hidden">
+                      <div className="px-6 py-4 border-b border-white/[0.06]">
+                         <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Répartition Culturale</h3>
                       </div>
                       <div className="p-6 h-64">
                         {cultureData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                              <Pie data={cultureData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} dataKey="value" stroke="none" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10} fontWeight={600} >
+                              <Pie data={cultureData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} dataKey="value" stroke="none" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10} fontWeight={600} fill="rgba(255,255,255,0.6)">
                                 {cultureData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                               </Pie>
-                              <Tooltip formatter={(v) => [`${v} T`]} contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", padding: "12px" }} />
+                              <Tooltip formatter={(v) => [`${v} T`]} contentStyle={{ background: "#0F2318", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.4)", padding: "12px", color: "#fff" }} />
                             </PieChart>
                           </ResponsiveContainer>
-                        ) : <div className="h-full flex items-center justify-center text-sm font-medium text-gray-400">Aucune donnée de culture</div>}
+                        ) : <div className="h-full flex items-center justify-center text-sm font-medium text-white/30">Aucune donnée de culture</div>}
                       </div>
                     </div>
                   </div>
@@ -628,14 +650,14 @@ export const ProducteurDetailModal = ({ producteur, open, onOpenChange, isAdmin 
                   {/* Summary stats */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                      { label: "Total Produit", value: `${totalProd} T`, cls: "text-gray-900" },
-                      { label: "Revenue Est.", value: `${(totalRevenuEst / 1000).toLocaleString()}k F`, cls: "text-amber-600" },
-                      { label: "Taux Écoulement", value: totalProd > 0 ? `${Math.round(totalVentes / totalProd * 100)}%` : "—", cls: "text-emerald-600" },
-                      { label: "Nb Vergers", value: producteur.vergers?.length || 0, cls: "text-blue-600" },
+                      { label: "Total Produit", value: `${totalProd} T`, cls: "text-white/90" },
+                      { label: "Revenue Est.", value: totalRevenuEst > 0 ? `${(totalRevenuEst / 1000).toLocaleString()}k F` : "0 F", cls: "text-amber-400" },
+                      { label: "Taux Écoulement", value: totalProd > 0 ? `${Math.round(totalVentes / totalProd * 100)}%` : "—", cls: "text-emerald-400" },
+                      { label: "Nb Vergers", value: producteur.vergers?.length || 0, cls: "text-blue-400" },
                     ].map(s => (
-                       <div key={s.label} className="bg-white border border-black/[0.04] shadow-[0_4px_20px_rgb(0,0,0,0.02)] rounded-[1.25rem] p-5 text-center transition-transform hover:-translate-y-1">
+                       <div key={s.label} className="bg-white/[0.04] border border-white/[0.07] rounded-[1.25rem] p-5 text-center transition-transform hover:-translate-y-1 hover:bg-white/[0.07]">
                          <p className={`text-2xl font-black mb-1.5 tracking-tight ${s.cls}`}>{s.value}</p>
-                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{s.label}</p>
+                         <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{s.label}</p>
                        </div>
                     ))}
                   </div>

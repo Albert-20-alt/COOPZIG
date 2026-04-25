@@ -198,7 +198,7 @@ export default function Dashboard() {
 
         {/* Maps and Pie Chart */}
         <div className="grid lg:grid-cols-3 gap-6">
-           <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl shadow-sm p-6 relative h-[500px]">
+           <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl shadow-sm p-6 relative h-[600px]">
               <div className="absolute top-4 left-6 z-10">
                  <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-none px-3 py-1 font-medium text-xs flex gap-1.5 items-center">
                     <Globe size={12} className="text-emerald-500" />

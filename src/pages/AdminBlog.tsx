@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, Star, StarOff,
   Upload, X, ImageIcon, Loader2, Search, ChevronDown,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +85,8 @@ const AdminBlog = () => {
   const [form, setForm] = useState<ArticleForm>(EMPTY_FORM);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // ── Queries ──
   const { data: articles = [], isLoading } = useQuery({
@@ -228,6 +231,22 @@ const AdminBlog = () => {
     return matchStatus && matchSearch;
   });
 
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const currentItems = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (val: typeof STATUS_FILTER[number]) => {
+    setStatusFilter(val);
+    setCurrentPage(1);
+  };
+
   const counts = {
     total: articles.length,
     published: articles.filter((a) => a.status === "published").length,
@@ -277,7 +296,7 @@ const AdminBlog = () => {
             <Input
               placeholder="Rechercher par titre ou thématique…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
             />
           </div>
@@ -285,7 +304,7 @@ const AdminBlog = () => {
             {STATUS_FILTER.map((s) => (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => handleStatusFilterChange(s)}
                 className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                   statusFilter === s
                     ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
@@ -318,7 +337,7 @@ const AdminBlog = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((article) => (
+                {currentItems.map((article) => (
                   <tr key={article.id} className="hover:bg-emerald-50/30 transition-all group cursor-default">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -397,6 +416,53 @@ const AdminBlog = () => {
             </table>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-[2rem] border border-gray-100 shadow-sm">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4">
+              Affichage de {(currentPage - 1) * ITEMS_PER_PAGE + 1} à {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} sur {filtered.length} articles
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="rounded-2xl border-gray-100 hover:bg-gray-50 h-10 w-10"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              
+              <div className="flex items-center gap-1.5 mx-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={cn(
+                      "h-10 w-10 rounded-2xl text-xs font-black transition-all duration-300",
+                      currentPage === p
+                        ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10"
+                        : "text-gray-400 hover:bg-gray-50"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-2xl border-gray-100 hover:bg-gray-50 h-10 w-10"
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create / Edit Dialog - Premium Quantum Design */}

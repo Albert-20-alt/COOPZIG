@@ -15,104 +15,117 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Admin client — used for all privileged operations AND to verify the caller's JWT
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Extract the caller's JWT from the Authorization header
+    // Verify caller JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Non autorisé — token manquant" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const token = authHeader.replace("Bearer ", "");
-
-    // Use the admin client to validate the JWT — works with any key type (publishable or legacy)
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !user) {
+    const { data: { user: caller }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !caller) {
       return new Response(JSON.stringify({ error: "Non autorisé — token invalide" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check if caller is superadmin
+    // Check permissions (Superadmin OR specific permission for some actions)
     const { data: isSuperAdmin } = await supabaseAdmin.rpc("has_role", {
-      _user_id: user.id,
+      _user_id: caller.id,
       _role: "superadmin",
     });
 
-    if (!isSuperAdmin) {
-      return new Response(JSON.stringify({ error: "Accès réservé aux superadmins" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Get request body
-    const { email, password, fullName, phone, entreprise, role } = await req.json();
-
-    if (!email || !password || !role) {
-      return new Response(JSON.stringify({ error: "Email, mot de passe et rôle requis" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Create user with admin API (auto-confirms email)
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: fullName },
+    const { data: canDeleteUsers } = await supabaseAdmin.rpc("has_special_permission", {
+      _user_id: caller.id,
+      _permission: "can_delete_users",
     });
 
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
+    const body = await req.json();
+    const { action = "create", userId, email, password, fullName, phone, entreprise, role } = body;
+
+    // ─── ACTION: DELETE ───────────────────────────────────────────────────────
+    if (action === "delete") {
+      const { data: isAdmin } = await supabaseAdmin.rpc("has_role", { _user_id: caller.id, _role: "admin" });
+      
+      if (!isSuperAdmin && !isAdmin && !canDeleteUsers) {
+        return new Response(JSON.stringify({ error: "Permission de suppression requise" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!userId) throw new Error("userId requis pour la suppression");
+      if (userId === caller.id) throw new Error("Vous ne pouvez pas vous supprimer vous-même");
+
+      // Protect other superadmins
+      const { data: targetIsSA } = await supabaseAdmin.rpc("has_role", { _user_id: userId, _role: "superadmin" });
+      if (targetIsSA) throw new Error("Impossible de supprimer un compte superadmin");
+
+      const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (delErr) throw delErr;
+
+      return new Response(JSON.stringify({ success: true, message: "Utilisateur supprimé" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Update profile with additional info
-    if (phone || entreprise) {
+    // ─── ACTION: UPDATE EMAIL ─────────────────────────────────────────────────
+    if (action === "update-email") {
+      if (!isSuperAdmin) throw new Error("Seul un superadmin peut changer l'email d'un compte");
+      if (!userId || !email) throw new Error("userId et email requis");
+
+      const { error: upErr } = await supabaseAdmin.auth.admin.updateUserById(userId, { email, email_confirm: true });
+      if (upErr) throw upErr;
+
+      return new Response(JSON.stringify({ success: true, message: "Email mis à jour" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── ACTION: CREATE (default) ────────────────────────────────────────────
+    if (action === "create") {
+      if (!isSuperAdmin) throw new Error("Accès réservé aux superadmins");
+      if (!email || !password || !role) throw new Error("Email, mot de passe et rôle requis");
+
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName },
+      });
+
+      if (createError) throw createError;
+
+      // Profile details
       await supabaseAdmin.from("profiles").update({
-        phone,
-        entreprise,
+        phone: phone || null,
+        entreprise: entreprise || null,
         full_name: fullName || "",
       }).eq("user_id", newUser.user.id);
-    }
 
-    // Assign role
-    const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
-      user_id: newUser.user.id,
-      role: role,
-    });
+      // Role
+      await supabaseAdmin.from("user_roles").insert({ user_id: newUser.user.id, role });
 
-    if (roleError) {
-      console.error("Role assignment error:", roleError);
-    }
+      // Special logic for producteur
+      if (role === "producteur") {
+        await supabaseAdmin.from("producteurs").insert({
+          user_id: newUser.user.id,
+          nom: fullName || email,
+        });
+      }
 
-    // If producteur role, create producteur entry
-    if (role === "producteur") {
-      await supabaseAdmin.from("producteurs").insert({
-        user_id: newUser.user.id,
-        nom: fullName || email,
-        localisation: "",
+      return new Response(JSON.stringify({ success: true, userId: newUser.user.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        userId: newUser.user.id,
-        user: { id: newUser.user.id, email: newUser.user.email },
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    throw new Error("Action non reconnue");
 
   } catch (error) {
     console.error("Error:", error);

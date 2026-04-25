@@ -18,7 +18,7 @@ export type ActivityLogEntry = {
   entity_type: string | null;
   entity_id: string | null;
   label: string | null;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   created_at: string;
 };
 
@@ -32,7 +32,7 @@ export type AdminNotification = {
   actor_name: string | null;
   target_id: string | null;
   target_email: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   is_read: boolean;
   created_at: string;
 };
@@ -58,9 +58,9 @@ async function createAdminNotification(params: {
   actor_name?: string;
   target_id?: string;
   target_email?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }) {
-  await (supabase.from("admin_notifications" as any) as any).insert({
+  await supabase.from("admin_notifications").insert({
     type: params.type,
     title: params.title,
     body: params.body || null,
@@ -84,8 +84,7 @@ export const useActivityLog = () => {
       label: string;
       entity_type?: string;
       entity_id?: string;
-      details?: Record<string, any>;
-      // For actions that need to notify superadmin
+      details?: Record<string, unknown>;
       notify?: boolean;
       notifyTarget?: { id?: string; email?: string };
     }) => {
@@ -93,7 +92,7 @@ export const useActivityLog = () => {
       const userName = user.user_metadata?.full_name || user.email;
 
       // 1. Insert activity log
-      const { error } = await (supabase.from("activity_logs" as any) as any).insert({
+      const { error } = await supabase.from("activity_logs").insert({
         user_id: user.id,
         user_email: user.email,
         user_name: userName,
@@ -153,9 +152,8 @@ export const useSessionTracker = () => {
 
     const userName = user.user_metadata?.full_name || user.email;
 
-    // Create session on mount (login)
     const startSession = async () => {
-      const { data } = await (supabase.from("user_sessions" as any) as any)
+      const { data } = await supabase.from("user_sessions")
         .insert({
           user_id: user.id,
           user_email: user.email,
@@ -166,7 +164,6 @@ export const useSessionTracker = () => {
         .single();
       if (data?.id) {
         sessionIdRef.current = data.id;
-        // Also notify superadmin of login
         await createAdminNotification({
           type: "login",
           title: "🟢 Nouvelle connexion",
@@ -176,8 +173,7 @@ export const useSessionTracker = () => {
           actor_name: userName as string,
           metadata: { user_agent: navigator.userAgent },
         });
-        // Log in activity_logs too
-        await (supabase.from("activity_logs" as any) as any).insert({
+        await supabase.from("activity_logs").insert({
           user_id: user.id,
           user_email: user.email,
           user_name: userName,
@@ -191,24 +187,18 @@ export const useSessionTracker = () => {
 
     startSession();
 
-    // Heartbeat every 2 minutes to keep last_seen_at fresh
     heartbeatRef.current = setInterval(async () => {
       if (!sessionIdRef.current) return;
-      await (supabase.from("user_sessions" as any) as any)
+      await supabase.from("user_sessions")
         .update({ last_seen_at: new Date().toISOString() })
         .eq("id", sessionIdRef.current);
     }, 2 * 60 * 1000);
 
-    // On unmount: mark logout
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       if (!sessionIdRef.current) return;
       const loggedOutAt = new Date().toISOString();
-      // Use sendBeacon for reliability on tab close
-      navigator.sendBeacon(
-        `/api/noop`, // fallback – we call supabase directly below
-      );
-      (supabase.from("user_sessions" as any) as any)
+      supabase.from("user_sessions")
         .update({ logged_out_at: loggedOutAt })
         .eq("id", sessionIdRef.current)
         .then(() => {});
@@ -228,7 +218,7 @@ export const useActivityLogs = (filters?: {
   return useQuery({
     queryKey: ["activity-logs", filters],
     queryFn: async () => {
-      let q = (supabase.from("activity_logs" as any) as any)
+      let q = supabase.from("activity_logs")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(filters?.limit || 200);
@@ -252,7 +242,7 @@ export const useUserSessions = (filters?: { userId?: string; activeOnly?: boolea
   return useQuery({
     queryKey: ["user-sessions", filters],
     queryFn: async () => {
-      let q = (supabase.from("user_sessions" as any) as any)
+      let q = supabase.from("user_sessions")
         .select("*")
         .order("logged_in_at", { ascending: false })
         .limit(200);
@@ -275,7 +265,7 @@ export const useAdminNotifications = () => {
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["admin-notifications"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("admin_notifications" as any) as any)
+      const { data, error } = await supabase.from("admin_notifications")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
@@ -289,7 +279,7 @@ export const useAdminNotifications = () => {
 
   const markAsRead = useMutation({
     mutationFn: async (ids: string[] | "all") => {
-      const q = (supabase.from("admin_notifications" as any) as any).update({ is_read: true });
+      const q = supabase.from("admin_notifications").update({ is_read: true });
       if (ids === "all") {
         await q.eq("is_read", false);
       } else {
@@ -307,7 +297,7 @@ export const useActiveUsers = () => {
   return useQuery({
     queryKey: ["activity-logs-users"],
     queryFn: async () => {
-      const { data } = await (supabase.from("activity_logs" as any) as any)
+      const { data } = await supabase.from("activity_logs")
         .select("user_id, user_email, user_name")
         .order("created_at", { ascending: false })
         .limit(500);
@@ -318,6 +308,23 @@ export const useActiveUsers = () => {
         seen.add(row.user_id);
         return true;
       });
+    },
+  });
+};
+
+// ─── Hook: clear all activity logs (superadmin) ──────────────────────────────
+export const useClearActivityLogs = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("activity_logs")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activity-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["activity-logs-users"] });
     },
   });
 };

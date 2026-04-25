@@ -2,7 +2,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { 
   CalendarClock, Package, TrendingUp, Plus, Loader2, Pencil, 
   Trash2, Search, MapPin, Filter, Calendar,
-  ShieldCheck, CheckCircle2, Clock, AlertCircle, XCircle, X
+  ShieldCheck, CheckCircle2, Clock, AlertCircle, XCircle, X,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,11 +22,11 @@ import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 const statusConfig: Record<string, { cls: string; icon: any }> = {
-  "Confirmée":  { cls: "bg-emerald-50 text-emerald-700", icon: CheckCircle2 },
-  "En cours":   { cls: "bg-blue-50 text-blue-700", icon: Clock },
-  "En attente": { cls: "bg-amber-50 text-amber-700", icon: AlertCircle },
-  "Livrée":     { cls: "bg-indigo-50 text-indigo-700", icon: ShieldCheck },
-  "Annulée":    { cls: "bg-rose-50 text-rose-700", icon: XCircle },
+  "Confirmée":  { cls: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400", icon: CheckCircle2 },
+  "En cours":   { cls: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400", icon: Clock },
+  "En attente": { cls: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400", icon: AlertCircle },
+  "Livrée":     { cls: "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400", icon: ShieldCheck },
+  "Annulée":    { cls: "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400", icon: XCircle },
 };
 
 const moisOptions = [
@@ -59,6 +60,8 @@ const Precommandes = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+  const PAGE_SIZE = 15;
   const confirm = useConfirm();
   const [filterStatut, setFilterStatut] = useState("all");
   const [form, setForm] = useState<any>({ 
@@ -97,6 +100,9 @@ const Precommandes = () => {
     const matchStatut = filterStatut === "all" || p.statut === filterStatut;
     return matchSearch && matchStatut;
   });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedData = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
 
   const { data: buyers = [] } = useQuery({
     queryKey: ["buyers"],
@@ -155,13 +161,13 @@ const Precommandes = () => {
        <div className="space-y-6">
 
         {/* Clean Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#131d2e] p-6 rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Réservations sur récolte</h1>
-            <p className="text-sm text-gray-500 mt-1">Sécurisez vos approvisionnements en enregistrant des intentions d'achat.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Réservations sur récolte</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Sécurisez vos approvisionnements en enregistrant des intentions d'achat.</p>
           </div>
           {isAdmin && (
-            <Button onClick={() => setOpen(true)} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
+            <Button onClick={() => setOpen(true)} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 shadow-lg shadow-emerald-900/10">
               <Plus className="mr-2" size={16} />
               Nouvelle Réservation
             </Button>
@@ -176,29 +182,39 @@ const Precommandes = () => {
            <StatCard title="Valorisation" value="—" icon={TrendingUp} description="Estimation CA futur" />
         </div>
 
-        {/* Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-           <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        {/* Toolbar - Quantum Standard */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+           <div className="relative flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
               <Input 
                 placeholder="Chercher variété, lieu..." 
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-10 w-full border-gray-200"
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
+                className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11"
               />
            </div>
            
-           <div className="flex gap-2 w-full sm:w-auto">
-              <Select value={filterStatut} onValueChange={setFilterStatut}>
-                 <SelectTrigger className="h-10 w-full sm:w-48 bg-white border-gray-200">
-                    <SelectValue placeholder="Tous les Statuts" />
-                 </SelectTrigger>
-                 <SelectContent>
-                    <SelectItem value="all">Tous les Statuts</SelectItem>
-                    {Object.keys(statusConfig).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                 </SelectContent>
-              </Select>
-              <Button variant="outline" size="icon" className="border-gray-200"><Filter size={16}/></Button>
+           <div className="flex flex-wrap items-center gap-2 p-1">
+              <div className="flex gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl overflow-x-auto max-w-[600px]">
+                {[
+                  { id: "all", label: "Tous" },
+                  ...Object.keys(statusConfig).map(s => ({ id: s, label: s }))
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setFilterStatut(s.id); setCurrentPage(0); }}
+                    className={cn(
+                      "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                      filterStatut === s.id
+                        ? "bg-[#1A2E1C] text-white shadow-md shadow-emerald-900/10"
+                        : "text-gray-400 hover:text-gray-600 hover:bg-white dark:hover:bg-white/5"
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-gray-100 dark:border-white/10 text-gray-400 hover:text-emerald-600"><Filter size={16}/></Button>
            </div>
         </div>
 
@@ -206,10 +222,10 @@ const Precommandes = () => {
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-emerald-600" size={32} /></div>
         ) : (
-          <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col">
              <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                   <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+                   <thead className="bg-gray-50/50 dark:bg-white/5 text-[10px] uppercase tracking-widest text-gray-400 font-black border-b border-gray-100 dark:border-[#1e2d45]">
                       <tr>
                          <th className="px-6 py-4">Produit / Réf</th>
                          <th className="px-6 py-4">Volume Demandé</th>
@@ -219,21 +235,22 @@ const Precommandes = () => {
                          {isAdmin && <th className="px-6 py-4 text-right">Actions</th>}
                       </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-100">
-                      {filtered.length === 0 ? (
+                   <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                      {paginatedData.length === 0 ? (
                          <tr><td colSpan={6} className="py-12 text-center text-gray-500">Aucune réservation trouvée</td></tr>
                       ) : (
-                        filtered.map((p: any) => {
+                        paginatedData.map((p: any) => {
                           const scfg = statusConfig[p.statut] || { cls: "bg-gray-100 text-gray-700", icon: AlertCircle };
                           const SIcon = scfg.icon;
                           return (
-                            <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors group">
                                <td className="px-6 py-4">
-                                  <div className="font-bold text-gray-900">{p.produit_nom}</div>
-                                  <div className="text-xs text-gray-500 mt-1 uppercase">RÉF: {p.id.slice(0,8)}</div>
+                                  <div className="font-bold text-gray-900 dark:text-gray-100">{p.produit_nom}</div>
+                                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-1">RÉF: {p.id.slice(0,8)}</div>
                                </td>
-                               <td className="px-6 py-4 font-semibold text-gray-900">
-                                  {Number(p.quantite).toLocaleString()} <span className="text-xs font-normal text-gray-500">{p.unite}</span>
+                               <td className="px-6 py-4">
+                                  <div className="font-black text-gray-900 dark:text-gray-100">{Number(p.quantite).toLocaleString()}</div>
+                                  <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">{p.unite}</div>
                                </td>
                                <td className="px-6 py-4">
                                   <div className="flex items-center gap-2 text-gray-600">
@@ -246,8 +263,8 @@ const Precommandes = () => {
                                   </div>
                                </td>
                                <td className="px-6 py-4">
-                                  <Badge variant="outline" className={cn("border-none gap-1 font-medium", scfg.cls)}>
-                                     <SIcon size={12} /> {p.statut}
+                                  <Badge variant="outline" className={cn("border-none gap-1 font-bold text-[10px] uppercase tracking-wider py-1 px-3", scfg.cls)}>
+                                     <SIcon size={10} /> {p.statut}
                                   </Badge>
                                </td>
                                {isAdmin && (
@@ -278,6 +295,54 @@ const Precommandes = () => {
                    </tbody>
                 </table>
              </div>
+
+             {/* Premium Pagination - Quantum Standard */}
+             {filtered.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/5 gap-4">
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+                  Affichage de {currentPage * PAGE_SIZE + 1} à {Math.min((currentPage + 1) * PAGE_SIZE, filtered.length)} sur {filtered.length} réservations
+                </div>
+                
+                <div className="flex items-center gap-1.5">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))} 
+                    disabled={currentPage === 0} 
+                    className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronLeft size={14} />
+                  </Button>
+
+                  <div className="flex items-center gap-1.5 mx-2">
+                    {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        className={cn(
+                          "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                          currentPage === p
+                            ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                            : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                        )}
+                      >
+                        {p + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))} 
+                    disabled={currentPage >= totalPages - 1} 
+                    className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-emerald-600 hover:border-emerald-100 transition-all shadow-sm"
+                  >
+                    <ChevronRight size={14} />
+                  </Button>
+                </div>
+              </div>
+             )}
           </div>
         )}
       </div>

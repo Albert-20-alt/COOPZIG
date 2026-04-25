@@ -5,7 +5,7 @@ import {
   TrendingUp, AlertTriangle, Coins, Menu, X, LogOut,
   Inbox, MessageSquare, ShieldCheck, Settings, BookOpen,
   PiggyBank, Wallet, FileText, Activity, BarChart2, Newspaper, FolderKanban,
-  Moon, Sun, Tag, FileDown, Mail,
+  Moon, Sun, Tag, FileDown, Mail, Home, ClipboardList,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,7 +37,7 @@ const navGroups = [
   {
     label: "Commerce",
     items: [
-      { to: "/marketplace",    label: "Marketplace",  icon: ShoppingBag,  moduleKey: "marketplace" },
+      { to: "/marketplace",    label: "Prix & Catalogue", icon: Tag,       moduleKey: "marketplace" },
       { to: "/catalogue",      label: "Catalogue",    icon: Package,      moduleKey: "commandes" },
       { to: "/commandes",      label: "Commandes",    icon: ShoppingCart, moduleKey: "commandes" },
       { to: "/precommandes",   label: "Précommandes", icon: CalendarClock,moduleKey: "precommandes" },
@@ -55,7 +55,7 @@ const navGroups = [
       { to: "/cotisations",          label: "Cotisations",         icon: PiggyBank, moduleKey: "cotisations" },
       { to: "/tresorerie",           label: "Trésorerie",          icon: Wallet,    moduleKey: "tresorerie" },
       { to: "/facturation",          label: "Facturation",         icon: FileText,  moduleKey: "facturation" },
-      { to: "/fiches-analytiques",   label: "Fiches Analytiques",  icon: BarChart2, moduleKey: "finances" },
+      { to: "/fiches-analytiques",   label: "Fiches Analytiques",  icon: FileDown,  moduleKey: "finances" },
     ],
   },
   {
@@ -243,6 +243,38 @@ const AppSidebar = () => {
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto px-3 py-4 space-y-5 custom-scrollbar"
         >
+          {/* Espace Personnel — visible to all authenticated users */}
+          <div>
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600 mb-1">
+              Personnel
+            </p>
+            <div className="space-y-0.5">
+              {roles?.includes("producteur") && (
+                <NavItem
+                  to="/mon-espace"
+                  label="Mon Espace"
+                  icon={Home}
+                  isActive={location.pathname === "/mon-espace"}
+                  onClick={() => setMobileOpen(false)}
+                />
+              )}
+              <NavItem
+                to="/taches"
+                label="Mes Tâches"
+                icon={ClipboardList}
+                isActive={location.pathname === "/taches"}
+                onClick={() => setMobileOpen(false)}
+              />
+              <NavItem
+                to="/profil"
+                label="Mon Profil"
+                icon={Activity}
+                isActive={location.pathname === "/profil"}
+                onClick={() => setMobileOpen(false)}
+              />
+            </div>
+          </div>
+
           {navGroups.filter(g => g.label !== "Général").map((group) => {
             const visibleItems = group.items.filter(item => hasAccess(item.moduleKey));
             if (visibleItems.length === 0) return null;

@@ -2,8 +2,10 @@ import { useState } from "react";
 import {
   FileDown, FileText, Users, Sprout, Package,
   ShoppingCart, Coins, PiggyBank, Wallet, Inbox,
-  Loader2, CheckCircle2, Eye,
+  Loader2, CheckCircle2, Eye, Search, Filter
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -132,8 +134,17 @@ type ReportDef = {
   description: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   color: string;
+  category: "crm" | "production" | "logistique" | "finance";
   fetch: () => Promise<{ headers: string[]; rows: (string | number)[][] }>;
 };
+
+const CATEGORIES = [
+  { id: "all", label: "Tous les rapports" },
+  { id: "crm", label: "Membres & CRM" },
+  { id: "production", label: "Production" },
+  { id: "logistique", label: "Logistique" },
+  { id: "finance", label: "Finance & Ventes" },
+];
 
 const REPORTS: ReportDef[] = [
   {
@@ -142,6 +153,7 @@ const REPORTS: ReportDef[] = [
     description: "Liste complète des membres avec localisation, superficie et cultures",
     icon: Users,
     color: "emerald",
+    category: "crm",
     fetch: async () => {
       const { data, error } = await supabase
         .from("producteurs")
@@ -169,6 +181,7 @@ const REPORTS: ReportDef[] = [
     description: "Historique des récoltes par produit, quantité et qualité",
     icon: Sprout,
     color: "green",
+    category: "production",
     fetch: async () => {
       const { data, error } = await supabase
         .from("recoltes")
@@ -195,6 +208,7 @@ const REPORTS: ReportDef[] = [
     description: "État des stocks disponibles, réservés et vendus",
     icon: Package,
     color: "blue",
+    category: "logistique",
     fetch: async () => {
       const { data, error } = await supabase
         .from("stocks")
@@ -220,6 +234,7 @@ const REPORTS: ReportDef[] = [
     description: "Toutes les commandes internes avec statut et montant",
     icon: ShoppingCart,
     color: "amber",
+    category: "finance",
     fetch: async () => {
       const { data, error } = await supabase
         .from("commandes")
@@ -248,6 +263,7 @@ const REPORTS: ReportDef[] = [
     description: "Leads reçus depuis le formulaire public du site",
     icon: Inbox,
     color: "violet",
+    category: "crm",
     fetch: async () => {
       const { data, error } = await (supabase as any)
         .from("demandes")
@@ -276,6 +292,7 @@ const REPORTS: ReportDef[] = [
     description: "Historique des relevés de prix par produit et marché",
     icon: Coins,
     color: "orange",
+    category: "production",
     fetch: async () => {
       const { data, error } = await supabase
         .from("prix_marche")
@@ -302,6 +319,7 @@ const REPORTS: ReportDef[] = [
     description: "Paiements de cotisations des membres par période",
     icon: PiggyBank,
     color: "pink",
+    category: "finance",
     fetch: async () => {
       const { data, error } = await supabase
         .from("cotisations")
@@ -329,6 +347,7 @@ const REPORTS: ReportDef[] = [
     description: "Mouvements de caisse : entrées, sorties et soldes",
     icon: Wallet,
     color: "teal",
+    category: "finance",
     fetch: async () => {
       const { data, error } = await supabase
         .from("tresorerie")
@@ -369,6 +388,8 @@ const COLOR_MAP: Record<string, { bg: string; icon: string; badge: string }> = {
 const Rapports = () => {
   const [downloading, setDownloading] = useState<Record<string, "pdf" | "csv" | "preview" | null>>({});
   const [done, setDone] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
 
   const handlePreview = async (report: ReportDef) => {
     setDownloading((prev) => ({ ...prev, [report.id]: "preview" }));
@@ -413,17 +434,61 @@ const Rapports = () => {
       title="Rapports d'activité"
       subtitle="Téléchargez les rapports de chaque section au format PDF ou CSV pour vos partenaires"
     >
+      {/* ── Toolbar: Search & Filters ────────────────────────────────────────────────── */}
+      <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="relative w-full md:w-96 group">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Search size={18} className="text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+          </div>
+          <Input 
+            type="text" 
+            placeholder="Rechercher un rapport..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-11 h-12 bg-white dark:bg-[#131d2e] border-gray-100 dark:border-[#1e2d45] rounded-2xl shadow-sm focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-gray-400 font-medium"
+          />
+        </div>
+
+        <div className="flex items-center p-1.5 bg-gray-100/50 dark:bg-white/[0.03] rounded-2xl border border-gray-100/50 dark:border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={cn(
+                "px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap",
+                activeCategory === cat.id
+                  ? "bg-white dark:bg-emerald-800 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/[0.05]"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              )}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Info banner */}
-      <div className="mb-6 flex items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl px-4 py-3">
-        <FileText size={16} className="text-emerald-600 shrink-0 mt-0.5" />
-        <p className="text-sm text-emerald-800 dark:text-emerald-300">
-          Chaque rapport est généré en temps réel depuis la base de données. Le PDF inclut l'entête de la coopérative et est prêt à être transmis à vos partenaires.
-        </p>
+      <div className="mb-8 flex items-start gap-4 bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100/50 dark:border-emerald-800/20 rounded-2xl px-5 py-4 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-900/15">
+        <div className="w-10 h-10 rounded-xl bg-emerald-100/80 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+          <FileText size={20} className="text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-300">Génération en temps réel</h4>
+          <p className="text-xs text-emerald-800/70 dark:text-emerald-400/70 mt-0.5 leading-relaxed">
+            Chaque rapport est extrait instantanément depuis la base de données sécurisée de la coopérative. 
+            Les exports PDF incluent le cachet officiel et sont optimisés pour l'impression.
+          </p>
+        </div>
       </div>
 
       {/* Report cards grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {REPORTS.map((report) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {REPORTS.filter(r => {
+          const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                               r.description.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesCategory = activeCategory === "all" || r.category === activeCategory;
+          return matchesSearch && matchesCategory;
+        }).map((report) => {
           const c = COLOR_MAP[report.color] || COLOR_MAP.emerald;
           const Icon = report.icon;
           const isLoading = !!downloading[report.id];
@@ -432,11 +497,11 @@ const Rapports = () => {
           return (
             <div
               key={report.id}
-              className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col"
+              className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col transition-all hover:shadow-md hover:border-emerald-500/20 group/card"
             >
               {/* Card header */}
-              <div className={`p-5 ${c.bg}`}>
-                <div className={`w-10 h-10 rounded-xl bg-white dark:bg-[#131d2e] flex items-center justify-center shadow-sm mb-3`}>
+              <div className={`p-5 ${c.bg} transition-colors group-hover/card:bg-opacity-80`}>
+                <div className={`w-10 h-10 rounded-xl bg-white dark:bg-[#131d2e] flex items-center justify-center shadow-sm mb-3 group-hover/card:scale-110 transition-transform`}>
                   <Icon size={18} className={c.icon} />
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{report.title}</h3>
@@ -500,6 +565,23 @@ const Rapports = () => {
           );
         })}
       </div>
+
+      {REPORTS.filter(r => {
+        const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             r.description.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = activeCategory === "all" || r.category === activeCategory;
+        return matchesSearch && matchesCategory;
+      }).length === 0 && (
+        <div className="py-20 text-center">
+          <div className="w-16 h-16 rounded-full bg-gray-50 dark:bg-white/[0.02] flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-white/5">
+            <Search size={24} className="text-gray-300" />
+          </div>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Aucun rapport trouvé</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Essayez de modifier vos critères de recherche ou de changer de catégorie.
+          </p>
+        </div>
+      )}
 
       {/* Tip */}
       <p className="mt-8 text-xs text-gray-400 dark:text-gray-600">

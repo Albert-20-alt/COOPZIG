@@ -1,15 +1,21 @@
 import { useState } from "react";
-import { Bell, Check, CheckCheck, X, ShieldAlert, KeyRound, UserX, LogIn, User } from "lucide-react";
+import { Bell, CheckCheck, X, ShieldAlert, KeyRound, UserX, LogIn, User, Zap, Loader2 } from "lucide-react";
 import { useAdminNotifications, AdminNotification } from "@/hooks/useActivityLog";
-import { format, parseISO, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bg: string; border: string }> = {
-  login:          { icon: LogIn,      color: "text-emerald-600", bg: "bg-emerald-50",  border: "border-emerald-100" },
-  profile_update: { icon: User,       color: "text-blue-600",    bg: "bg-blue-50",     border: "border-blue-100" },
-  password_change:{ icon: KeyRound,   color: "text-amber-600",   bg: "bg-amber-50",    border: "border-amber-100" },
-  user_deleted:   { icon: UserX,      color: "text-red-600",     bg: "bg-red-50",      border: "border-red-100" },
-  default:        { icon: ShieldAlert,color: "text-gray-600",    bg: "bg-gray-50",     border: "border-gray-100" },
+  login:                    { icon: LogIn,      color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+  profile_update:           { icon: User,       color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-100" },
+  password_change:          { icon: KeyRound,   color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-100" },
+  user_deleted:             { icon: UserX,      color: "text-red-600",     bg: "bg-red-50",     border: "border-red-100" },
+  cotisation_retard:        { icon: Zap,        color: "text-orange-600",  bg: "bg-orange-50",  border: "border-orange-100" },
+  stock_critique:           { icon: Zap,        color: "text-red-600",     bg: "bg-red-50",     border: "border-red-100" },
+  verger_bloque:            { icon: Zap,        color: "text-purple-600",  bg: "bg-purple-50",  border: "border-purple-100" },
+  producteur_inactif_dette: { icon: Zap,        color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-100" },
+  default:                  { icon: ShieldAlert,color: "text-gray-600",    bg: "bg-gray-50",    border: "border-gray-100" },
 };
 
 function timeAgo(iso: string) {
@@ -51,10 +57,25 @@ function NotifItem({ notif, onRead }: { notif: AdminNotification; onRead: (id: s
 
 export default function AdminNotificationsBell() {
   const [open, setOpen] = useState(false);
+  const [running, setRunning] = useState(false);
   const { notifications, unreadCount, markAsRead } = useAdminNotifications();
 
   const handleRead = (id: string) => markAsRead.mutate([id]);
   const handleReadAll = () => markAsRead.mutate("all");
+
+  const runAutoAlerts = async () => {
+    setRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("alertes-auto");
+      if (error) throw error;
+      const inserted = (data as any)?.inserted ?? 0;
+      toast.success(inserted > 0 ? `${inserted} nouvelle(s) alerte(s) créée(s)` : "Aucune nouvelle alerte détectée");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors du scan des alertes");
+    } finally {
+      setRunning(false);
+    }
+  };
 
   return (
     <div className="relative">
@@ -92,6 +113,15 @@ export default function AdminNotificationsBell() {
                 )}
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  onClick={runAutoAlerts}
+                  disabled={running}
+                  title="Scanner les alertes automatiques"
+                  className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-amber-600 hover:text-amber-700 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-50"
+                >
+                  {running ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                  Scan
+                </button>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleReadAll}

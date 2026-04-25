@@ -67,6 +67,8 @@ const AdminMessages = lazy(() => import("./pages/AdminMessages"));
 const CatalogueProduits = lazy(() => import("./pages/CatalogueProduits"));
 const BotUploader = lazy(() => import("./pages/BotUploader"));
 const Profil = lazy(() => import("./pages/Profil"));
+const MonEspace = lazy(() => import("./pages/MonEspace"));
+const Taches = lazy(() => import("./pages/Taches"));
 
 const queryClient = new QueryClient();
 
@@ -217,6 +219,8 @@ const App = () => (
             <Route path="/catalogue" element={<ProtectedRoute><CatalogueProduits /></ProtectedRoute>} />
             <Route path="/gestion-investisseurs" element={<ProtectedRoute><GestionInvestisseurs /></ProtectedRoute>} />
             <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
+            <Route path="/mon-espace" element={<ProtectedRoute><MonEspace /></ProtectedRoute>} />
+            <Route path="/taches" element={<ProtectedRoute><Taches /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

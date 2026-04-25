@@ -25,20 +25,23 @@ const statutConfig: Record<string, { bg: string; text: string; ring: string; ico
   "En retard": { bg: "bg-rose-50", text: "text-rose-700", ring: "ring-rose-600/20", icon: XCircle },
 };
 
-const StatCard = ({ title, value, icon: Icon, variant = "default" }: any) => (
-  <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 overflow-hidden relative">
-    <div className="flex justify-between items-start mb-4">
+const CotisationStatCard = ({ title, value, icon: Icon, variant = "default" }: any) => (
+  <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] p-5 shadow-sm relative overflow-hidden group">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors" />
+    <div className="flex items-center justify-between mb-4 relative z-10">
       <div className={cn(
-        "p-2.5 rounded-lg",
-        variant === "green" ? "bg-emerald-50 text-emerald-600" :
-        variant === "gold" ? "bg-amber-50 text-amber-600" :
-        "bg-blue-50 text-blue-600"
+        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110",
+        variant === "green" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" : 
+        variant === "gold" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400" : 
+        "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
       )}>
-        <Icon size={20} strokeWidth={2} />
+        <Icon size={18} strokeWidth={2.5} />
       </div>
     </div>
-    <h3 className="text-2xl font-bold text-gray-900 mb-1">{value}</h3>
-    <p className="text-sm font-medium text-gray-500">{title}</p>
+    <div className="relative z-10">
+      <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-none mb-1">{value}</h3>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{title}</p>
+    </div>
   </div>
 );
 
@@ -142,52 +145,57 @@ const Cotisations = () => {
     <DashboardLayout title="Cotisations" subtitle="Suivi des versements saisonniers et capitaux des membres producteurs">
       <div className="space-y-6">
 
-        {/* Action Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Registre des Cotisations</h1>
-            <p className="text-sm text-gray-500 mt-1">Consultez l'état d'adhésion financière de vos membres.</p>
-          </div>
-          {isAdmin && (
-            <Button onClick={() => { setFormData(defaultForm()); setOpen(true); }} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
-               <Plus className="mr-2" size={16} /> Percevoir Cotisation
-            </Button>
-          )}
+        {/* Global Stats - Quantum Editorial Style */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+           <CotisationStatCard title="Capital Acquis" value={new Intl.NumberFormat('fr-FR').format(kpis.totalPaye) + " FCFA"} icon={Wallet} variant="gold" />
+           <CotisationStatCard title="En attente" value={new Intl.NumberFormat('fr-FR').format(kpis.totalAttente) + " FCFA"} icon={Clock} variant="rose" />
+           <CotisationStatCard title="Membres à jour" value={`${kpis.membresAJour} / ${producteurs.length || 1}`} icon={Users} variant="green" />
+           <CotisationStatCard title="NB Versements" value={kpis.totalCount} icon={CreditCard} variant="blue" />
         </div>
 
-        {/* Global Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-           <StatCard title="Capital Acquis" value={`${(kpis.totalPaye / 1000).toFixed(0)}k FCFA`} icon={Wallet} variant="gold" />
-           <StatCard title="En attente" value={`${(kpis.totalAttente / 1000).toFixed(0)}k FCFA`} icon={Clock} variant="rose" />
-           <StatCard title="Membres à jour" value={`${kpis.membresAJour} / ${producteurs.length || 1}`} icon={Users} variant="green" />
-           <StatCard title="NB Versements" value={kpis.totalCount} icon={CreditCard} variant="blue" />
-        </div>
-
-        {/* Filters and List */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-           <div className="p-4 border-b border-gray-100 flex items-center bg-gray-50/50">
-              <div className="relative w-full max-w-md">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                 <Input 
-                   placeholder="Rechercher période..." 
-                   value={search}
-                   onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                   className="pl-9 h-10 bg-white"
-                 />
-              </div>
+        {/* ── Toolbar - Quantum Unified ────────────────────────────────────────── */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-2 flex flex-col xl:flex-row gap-2">
+           <div className="flex gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl overflow-x-auto shrink-0">
+             <button className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/20 whitespace-nowrap">
+               Registre Global
+             </button>
+             <button className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-white/5 whitespace-nowrap transition-all">
+               Par Trimestre
+             </button>
            </div>
            
-           <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                 <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
-                    <tr>
-                       <th className="px-6 py-4">Membre & Période</th>
-                       <th className="px-6 py-4">Date de perception</th>
-                       <th className="px-6 py-4">Facturation</th>
-                       <th className="px-6 py-4">Statut</th>
-                       {isAdmin && <th className="px-6 py-4 text-right">Actions</th>}
-                    </tr>
-                 </thead>
+           <div className="relative flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+              <Input 
+                placeholder="Chercher un membre, une période ou un versement..." 
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                className="pl-12 border-none bg-transparent focus-visible:ring-0 font-medium h-11 text-base w-full"
+              />
+           </div>
+
+           <div className="flex items-center gap-1 px-1">
+              <Button onClick={() => { setFormData(defaultForm()); setOpen(true); }} className="h-10 rounded-xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 text-[10px] font-black uppercase tracking-widest gap-2 shadow-lg shadow-emerald-900/20 px-6 transition-all active:scale-95">
+                 <Plus size={14} strokeWidth={3} />
+                 Percevoir Cotisation
+              </Button>
+           </div>
+        </div>
+
+           
+        {/* Table & Pagination Container */}
+        <div className="bg-white dark:bg-[#131d2e] rounded-2xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden flex flex-col">
+            <div className="overflow-x-auto">
+               <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50/50 dark:bg-white/5 text-[10px] uppercase tracking-widest text-gray-400 font-black border-b border-gray-100 dark:border-[#1e2d45]">
+                     <tr>
+                        <th className="px-6 py-5">Membre & Période</th>
+                        <th className="px-6 py-5 text-center">Date de perception</th>
+                        <th className="px-6 py-5">Détails Financiers</th>
+                        <th className="px-6 py-5">Statut de la Cotisation</th>
+                        {isAdmin && <th className="px-6 py-5 text-right">Actions</th>}
+                     </tr>
+                  </thead>
                  <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                        <tr><td colSpan={5} className="py-12 text-center text-gray-500"><Loader2 className="animate-spin mx-auto text-emerald-600 mb-2" size={24} /> Chargement du registre...</td></tr>
@@ -198,23 +206,34 @@ const Cotisations = () => {
                          const cfg = statutConfig[c.statut] || statutConfig["En attente"];
                          const StatusIcon = cfg.icon;
                          return (
-                           <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-gray-900">{c.producteur?.nom || "Inconnu"}</p>
-                                 <p className="text-xs text-gray-500 mt-0.5">Période: {c.periode}</p>
-                              </td>
-                              <td className="px-6 py-4 text-gray-900 font-medium">
-                                 {format(new Date(c.date_paiement), "dd/MM/yyyy")}
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-gray-900">{Number(c.montant).toLocaleString()} FCFA</p>
-                                 <p className="text-xs text-gray-500 mt-0.5">{c.mode_paiement}</p>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset", cfg.bg, cfg.text, cfg.ring)}>
-                                    <StatusIcon size={12} strokeWidth={2.5}/> {c.statut}
-                                 </span>
-                              </td>
+                            <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors group">
+                               <td className="px-6 py-4">
+                                  <p className="font-black text-gray-900 dark:text-gray-100">{c.producteur?.nom || "Membre Inconnu"}</p>
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Saison: {c.periode}</p>
+                               </td>
+                               <td className="px-6 py-4 text-center">
+                                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-[11px] font-bold text-gray-600 dark:text-gray-400">
+                                     <Calendar size={12} />
+                                     {format(new Date(c.date_paiement), "dd/MM/yyyy")}
+                                  </span>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <p className="font-black text-gray-900 dark:text-gray-100">{Number(c.montant).toLocaleString()} FCFA</p>
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 flex items-center gap-1">
+                                     <CreditCard size={10} />
+                                     {c.mode_paiement}
+                                  </p>
+                               </td>
+                               <td className="px-6 py-4">
+                                  <span className={cn(
+                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border",
+                                    c.statut === "Payé" ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
+                                    c.statut === "En attente" ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" :
+                                    "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
+                                  )}>
+                                     <StatusIcon size={12} strokeWidth={3}/> {c.statut}
+                                  </span>
+                               </td>
                               {isAdmin && (
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
@@ -239,24 +258,53 @@ const Cotisations = () => {
               </table>
            </div>
 
-           {totalPages > 1 && (
-             <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50/50">
-               <span className="text-sm text-gray-600">
-                  Affichage de {filtered.length} résultat(s) sur {totalItems}
-               </span>
-               <div className="flex items-center gap-2">
-                 <Button variant="outline" size="sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="bg-white border-gray-200">
-                   <ChevronLeft size={16} className="mr-1" /> Précédent
-                 </Button>
-                 <span className="text-sm font-medium text-gray-600 px-2">
-                    Page {page + 1} sur {Math.max(1, totalPages)}
-                 </span>
-                 <Button variant="outline" size="sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1} className="bg-white border-gray-200">
-                   Suivant <ChevronRight size={16} className="ml-1" />
-                 </Button>
+             {/* Premium Pagination - Quantum Standard */}
+             {totalItems > 0 && (
+               <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/5 gap-4">
+                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">
+                   Affichage de {page * PAGE_SIZE + 1} à {Math.min((page + 1) * PAGE_SIZE, totalItems)} sur {totalItems} cotisations
+                 </div>
+                 
+                 <div className="flex items-center gap-1.5">
+                   <Button 
+                     variant="outline" 
+                     size="icon"
+                     onClick={() => setPage(Math.max(0, page - 1))} 
+                     disabled={page === 0} 
+                     className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-[#1A2E1C] hover:border-[#1A2E1C]/20 transition-all shadow-sm"
+                   >
+                     <ChevronLeft size={14} />
+                   </Button>
+
+                   <div className="flex items-center gap-1.5 mx-2">
+                     {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                       <button
+                         key={p}
+                         onClick={() => setPage(p)}
+                         className={cn(
+                           "h-9 w-9 rounded-xl text-[10px] font-black transition-all duration-300",
+                           page === p
+                             ? "bg-[#1A2E1C] text-white shadow-lg shadow-emerald-900/10" 
+                             : "text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
+                         )}
+                       >
+                         {p + 1}
+                       </button>
+                     ))}
+                   </div>
+
+                   <Button 
+                     variant="outline" 
+                     size="icon"
+                     onClick={() => setPage(Math.min(totalPages - 1, page + 1))} 
+                     disabled={page >= totalPages - 1} 
+                     className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/10 bg-white dark:bg-transparent text-gray-400 hover:text-[#1A2E1C] hover:border-[#1A2E1C]/20 transition-all shadow-sm"
+                   >
+                     <ChevronRight size={14} />
+                   </Button>
+                 </div>
                </div>
-             </div>
-           )}
+             )}
         </div>
       </div>
 

@@ -2,12 +2,13 @@ import { useState } from "react";
 import {
   Mail, Plus, Send, Archive, Pencil, Trash2, Loader2,
   Eye, Users, MousePointerClick, BarChart2, Clock,
-  CheckCircle2, Search, X, ChevronDown,
+  CheckCircle2, Search, X, ChevronDown, Activity, Save
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/ConfirmDialog";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -86,63 +87,90 @@ const PreviewModal = ({ campagne, onClose }: { campagne: Campagne | null; onClos
   const si = statutInfo(campagne.statut);
   return (
     <Dialog open={!!campagne} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-0 dark:bg-[#0d1525] dark:border-[#1e2d45]">
-        <div className="bg-[#1A2E1C] text-white px-6 py-4 flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ti.color}`}>{ti.label}</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${si.color}`}>{si.label}</span>
+      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto p-0 rounded-[2.5rem] border-none shadow-2xl overflow-hidden bg-white">
+        <div className="bg-[#0B1910] text-white p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
+          
+          <div className="relative z-10 flex items-start justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={cn("font-black text-[9px] uppercase tracking-widest py-0.5 px-3 rounded-full border-none shadow-sm bg-white/10 text-white/80", ti.color)}>
+                  {ti.label}
+                </Badge>
+                <Badge variant="outline" className={cn("font-black text-[9px] uppercase tracking-widest py-0.5 px-3 rounded-full border-none shadow-sm bg-white/10 text-white/80", si.color)}>
+                  {si.label}
+                </Badge>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight leading-tight mb-1">{campagne.titre}</h2>
+                <p className="text-emerald-400/60 font-bold text-sm">Objet : {campagne.sujet}</p>
+              </div>
             </div>
-            <p className="font-bold text-sm">{campagne.titre}</p>
-            <p className="text-xs opacity-70 mt-0.5">Objet : {campagne.sujet}</p>
+            <button onClick={onClose} className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all hover:rotate-90">
+              <X size={20} />
+            </button>
           </div>
-          <button onClick={onClose} className="text-white/60 hover:text-white ml-4 mt-0.5"><X size={18} /></button>
         </div>
 
         {/* Stats */}
         {campagne.statut === "envoye" && (
-          <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-[#1e2d45] border-b border-gray-100 dark:border-[#1e2d45]">
+          <div className="grid grid-cols-3 bg-gray-50/50 border-b border-black/[0.03]">
             {[
               { icon: Users,             label: "Destinataires", value: N(campagne.nb_destinataires ?? 0) },
               { icon: Eye,               label: "Ouvertures",    value: `${N(campagne.nb_ouverts)} (${campagne.nb_destinataires ? Math.round(campagne.nb_ouverts / campagne.nb_destinataires * 100) : 0}%)` },
               { icon: MousePointerClick, label: "Clics",         value: `${N(campagne.nb_clics)} (${campagne.nb_ouverts ? Math.round(campagne.nb_clics / campagne.nb_ouverts * 100) : 0}%)` },
-            ].map(s => (
-              <div key={s.label} className="p-4 flex flex-col items-center gap-1">
-                <s.icon size={16} className="text-emerald-600" />
-                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
-                <p className="text-[10px] text-gray-500">{s.label}</p>
+            ].map((s, i) => (
+              <div key={s.label} className={cn("p-6 flex flex-col items-center gap-2", i > 0 && "border-l border-black/[0.03]")}>
+                <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-black/[0.02] mb-1">
+                  <s.icon size={18} className="text-emerald-600" />
+                </div>
+                <p className="text-xl font-black text-gray-900 leading-none">{s.value}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">{s.label}</p>
               </div>
             ))}
           </div>
         )}
 
         {/* Content preview */}
-        <div className="p-6 space-y-4">
-          <div className="bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#1e2d45] rounded-xl p-5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">Contenu de l'email</p>
-            <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-              {campagne.contenu || <span className="text-gray-400 italic">Aucun contenu rédigé.</span>}
+        <div className="p-8 space-y-8">
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-emerald-50/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Mail size={12} className="text-emerald-500" />
+                Contenu de l'email
+              </p>
+              <div className="text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-medium bg-gray-50/50 p-6 rounded-2xl border border-black/[0.02]">
+                {campagne.contenu || <span className="text-gray-400 italic">Aucun contenu rédigé.</span>}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-2 gap-4">
             {[
-              ["Destinataires", DESTINATAIRES.find(d => d.value === campagne.destinataires)?.label ?? campagne.destinataires],
-              ["Créée le",      format(new Date(campagne.created_at), "dd MMM yyyy", { locale: fr })],
-              ...(campagne.date_envoi_prevu ? [["Envoi prévu", format(new Date(campagne.date_envoi_prevu), "dd MMM yyyy HH:mm", { locale: fr })]] : []),
-              ...(campagne.date_envoi_reel  ? [["Envoyée le",  format(new Date(campagne.date_envoi_reel),  "dd MMM yyyy HH:mm", { locale: fr })]] : []),
-            ].map(([k, v]) => (
-              <div key={k} className="bg-gray-50 dark:bg-white/[0.03] rounded-lg px-3 py-2 border border-gray-100 dark:border-[#1e2d45]">
-                <p className="text-gray-400 mb-0.5">{k}</p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">{v}</p>
+              ["Public cible", DESTINATAIRES.find(d => d.value === campagne.destinataires)?.label ?? campagne.destinataires, Users],
+              ["Date de création", format(new Date(campagne.created_at), "dd MMMM yyyy", { locale: fr }), Clock],
+              ...(campagne.date_envoi_prevu ? [["Envoi programmé", format(new Date(campagne.date_envoi_prevu), "dd MMM yyyy HH:mm", { locale: fr }), Send]] : []),
+              ...(campagne.date_envoi_reel  ? [["Expédition réelle",  format(new Date(campagne.date_envoi_reel),  "dd MMM yyyy HH:mm", { locale: fr }), CheckCircle2]] : []),
+            ].map(([k, v, Icon]: any) => (
+              <div key={k} className="bg-white rounded-2xl p-4 border border-black/[0.03] shadow-sm flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">{k}</p>
+                  <p className="font-bold text-gray-900 text-sm tracking-tight">{v}</p>
+                </div>
               </div>
             ))}
           </div>
 
           {campagne.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-black/[0.03]">
               {campagne.tags.map(t => (
-                <span key={t} className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-900/40">{t}</span>
+                <Badge key={t} variant="outline" className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg bg-blue-50/50 text-blue-600 border-blue-100">
+                  {t}
+                </Badge>
               ))}
             </div>
           )}
@@ -278,160 +306,248 @@ export default function CampagnesEmail() {
     return matchQ && matchType && matchStatut;
   });
 
+  // ─── Sub-components ────────────────────────────────────────────────────────
+  const StatCard = ({ label, value, icon: Icon, color, bg, variant = "default" }: any) => {
+    const variants: any = {
+      emerald: "from-emerald-500/10 to-emerald-500/5 text-emerald-600 border-emerald-100/50",
+      amber:   "from-amber-500/10 to-amber-500/5 text-amber-600 border-amber-100/50",
+      blue:    "from-blue-500/10 to-blue-500/5 text-blue-600 border-blue-100/50",
+      default: "from-gray-500/10 to-gray-500/5 text-gray-600 border-gray-100/50",
+    };
+
+    return (
+      <div className={cn(
+        "relative overflow-hidden rounded-[2rem] border p-6 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/5 group bg-white dark:bg-[#131d2e]",
+        variants[variant] || variants.default
+      )}>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-current opacity-[0.04] -mr-12 -mt-12 rounded-full blur-3xl group-hover:opacity-[0.08] transition-opacity" />
+        
+        <div className="flex items-start justify-between relative z-10">
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
+            <h3 className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tighter leading-none">{value}</h3>
+          </div>
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center bg-white dark:bg-white/5 shadow-xl shadow-black/5 border border-black/[0.03] transition-transform duration-500 group-hover:rotate-6",
+            color
+          )}>
+            <Icon size={24} strokeWidth={2.2} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ─────────────────────────────────────────────────────────────────────────────
   // LIST VIEW
   // ─────────────────────────────────────────────────────────────────────────────
   if (view === "list") return (
     <DashboardLayout
       title="Campagnes Email"
-      subtitle="Gérez vos campagnes de marketing digital et newsletters"
+      subtitle="Marketing Relationnel & Communication"
       actions={
-        <Button onClick={openNew} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
-          <Plus size={15} className="mr-1.5" /> Nouvelle campagne
+        <Button 
+          onClick={openNew} 
+          className="h-12 px-8 rounded-2xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 shadow-xl shadow-emerald-900/10 font-bold transition-all hover:scale-[1.02] active:scale-95"
+        >
+          <Plus size={18} className="mr-2" /> 
+          Nouvelle campagne
         </Button>
       }
     >
       {/* KPI strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Total campagnes", value: stats.total,     icon: Mail,             color: "text-gray-700",    bg: "bg-gray-50" },
-          { label: "Envoyées",        value: stats.envoyees,  icon: CheckCircle2,     color: "text-emerald-700", bg: "bg-emerald-50" },
-          { label: "Planifiées",      value: stats.planifiees,icon: Clock,            color: "text-amber-700",   bg: "bg-amber-50" },
-          { label: "Taux ouverture",  value: `${stats.tauxOuv}%`, icon: BarChart2,   color: "text-blue-700",    bg: "bg-blue-50" },
-        ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] p-4 shadow-sm flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg ${k.bg} flex items-center justify-center shrink-0`}>
-              <k.icon size={18} className={k.color} />
-            </div>
-            <div>
-              <p className={`text-xl font-bold ${k.color}`}>{k.value}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{k.label}</p>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Total campagnes" value={stats.total}      icon={Mail}             color="text-gray-500"    variant="default" />
+        <StatCard label="Envoyées"        value={stats.envoyees}  icon={CheckCircle2}     color="text-emerald-500" variant="emerald" />
+        <StatCard label="Planifiées"      value={stats.planifiees}icon={Clock}            color="text-amber-500"   variant="amber" />
+        <StatCard label="Taux ouverture"  value={`${stats.tauxOuv}%`} icon={BarChart2}   color="text-blue-500"    variant="blue" />
       </div>
 
       {/* Abonnés info banner */}
-      <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl px-5 py-3 mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Users size={18} className="text-blue-600 dark:text-blue-400" />
-          <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
-            <span className="text-lg font-bold">{N(nbAbonnes)}</span> abonnés newsletter actifs
-          </p>
+      <div className="relative overflow-hidden bg-[#0B1910] p-8 rounded-[2.5rem] border border-black/[0.03] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.2)] mb-8 group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-emerald-500/20 transition-all duration-700" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-900/20 rounded-full blur-[60px] -ml-24 -mb-24 pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-2xl shadow-emerald-900/40">
+              <Users className="text-emerald-400" size={32} />
+            </div>
+            <div>
+              <p className="text-emerald-500/60 font-black uppercase tracking-widest text-[10px] mb-1">Base de diffusion principale</p>
+              <h2 className="text-3xl font-black text-white tracking-tighter leading-none">
+                {N(nbAbonnes)} <span className="text-emerald-400/50">Abonnés Actifs</span>
+              </h2>
+            </div>
+          </div>
+          
+          <div className="bg-white/5 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-sm font-bold text-emerald-400 tracking-tight">Flux de synchronisation actif</span>
+          </div>
         </div>
-        <span className="text-xs text-blue-500 dark:text-blue-400">Base de diffusion principale</span>
       </div>
 
       {/* Filters + list */}
-      <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#131d2e] rounded-[2.5rem] border border-black/[0.03] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col">
         {/* Toolbar */}
-        <div className="p-4 border-b border-gray-100 dark:border-[#1e2d45] flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-[160px]">
-            <Search size={15} className="text-gray-400 shrink-0" />
-            <Input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher…"
-              className="border-0 bg-transparent p-0 text-sm focus-visible:ring-0 h-auto" />
+        <div className="p-8 border-b border-black/[0.03] bg-gray-50/30 flex flex-col lg:flex-row items-center gap-6">
+          <div className="relative w-full max-w-xl group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
+            <Input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher une campagne par titre ou objet…"
+              className="pl-12 h-14 rounded-[1.25rem] bg-white border-black/[0.05] shadow-sm focus:ring-emerald-500/20 text-base font-medium" 
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <select value={filterType} onChange={e => setFilterType(e.target.value)}
-              className="text-xs border border-gray-200 dark:border-[#1e2d45] rounded-lg px-3 py-1.5 bg-white dark:bg-[#131d2e] text-gray-700 dark:text-gray-300">
-              <option value="tous">Tous types</option>
-              {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-            <select value={filterStatut} onChange={e => setFilterStatut(e.target.value)}
-              className="text-xs border border-gray-200 dark:border-[#1e2d45] rounded-lg px-3 py-1.5 bg-white dark:bg-[#131d2e] text-gray-700 dark:text-gray-300">
-              <option value="tous">Tous statuts</option>
-              {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
+          
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="flex flex-1 lg:flex-none items-center gap-2 bg-white p-1 rounded-2xl border border-black/[0.05] shadow-sm">
+              <select value={filterType} onChange={e => setFilterType(e.target.value)}
+                className="text-xs font-black uppercase tracking-widest px-4 py-2 bg-transparent outline-none cursor-pointer hover:text-emerald-600 transition-colors">
+                <option value="tous">Tous types</option>
+                {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <div className="w-px h-6 bg-gray-100" />
+              <select value={filterStatut} onChange={e => setFilterStatut(e.target.value)}
+                className="text-xs font-black uppercase tracking-widest px-4 py-2 bg-transparent outline-none cursor-pointer hover:text-emerald-600 transition-colors">
+                <option value="tous">Tous statuts</option>
+                {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+            
+            <div className="hidden md:flex items-center gap-3 text-sm text-gray-500 font-bold px-4">
+              <Activity size={16} className="text-emerald-500" />
+              {filtered.length} résultats
+            </div>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center p-12"><Loader2 className="animate-spin text-emerald-600" size={24} /></div>
+          <div className="flex flex-col items-center justify-center p-24 gap-4">
+            <div className="relative w-12 h-12">
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+            </div>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Synchronisation des campagnes...</p>
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <Mail size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Aucune campagne</p>
-            <p className="text-sm mt-1">Créez votre première campagne email</p>
+          <div className="text-center p-24">
+            <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <Mail className="text-gray-300" size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">Aucune campagne à afficher</h3>
+            <p className="text-gray-500 max-w-xs mx-auto font-medium">Ajustez vos filtres ou lancez votre première offensive marketing digitale.</p>
+            <Button onClick={openNew} variant="outline" className="mt-8 h-12 rounded-2xl border-gray-200 font-bold px-8 shadow-sm">
+              <Plus size={18} className="mr-2" />
+              Créer une campagne
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-50 dark:divide-[#1e2d45]">
+          <div className="divide-y divide-black/[0.02]">
             {filtered.map(c => {
               const ti = typeInfo(c.type);
               const si = statutInfo(c.statut);
               const tauxOuv = (c.nb_destinataires ?? 0) > 0
                 ? Math.round(c.nb_ouverts / c.nb_destinataires! * 100) : null;
+              
               return (
                 <div key={c.id}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] cursor-pointer group"
+                  className="flex items-center gap-6 px-8 py-6 hover:bg-emerald-50/30 transition-all duration-300 group cursor-pointer"
                   onClick={() => setPreview(c)}>
-                  {/* Type icon */}
-                  <div className="w-9 h-9 rounded-lg bg-gray-50 dark:bg-white/[0.04] border border-gray-100 dark:border-[#1e2d45] flex items-center justify-center shrink-0">
-                    <Mail size={15} className="text-gray-500 dark:text-gray-400" />
+                  
+                  {/* Status Indicator */}
+                  <div className={cn(
+                    "w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm border border-black/[0.03] transition-transform duration-500 group-hover:scale-110",
+                    c.statut === "envoye" ? "bg-emerald-50 text-emerald-600" :
+                    c.statut === "planifie" ? "bg-amber-50 text-amber-600" :
+                    "bg-gray-50 text-gray-400"
+                  )}>
+                    {c.statut === "envoye" ? <Send size={20} /> : 
+                     c.statut === "planifie" ? <Clock size={20} /> : 
+                     <Pencil size={20} />}
                   </div>
 
                   {/* Title + meta */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{c.titre}</p>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${ti.color}`}>{ti.label}</span>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${si.color}`}>{si.label}</span>
+                    <div className="flex items-center gap-3 flex-wrap mb-1.5">
+                      <p className="font-black text-gray-900 text-lg tracking-tight truncate group-hover:text-emerald-700 transition-colors">
+                        {c.titre}
+                      </p>
+                      <Badge variant="outline" className={cn("font-black text-[10px] uppercase tracking-widest py-0.5 px-3 rounded-full border-none shadow-sm", ti.color)}>
+                        {ti.label}
+                      </Badge>
+                      <Badge variant="outline" className={cn("font-black text-[10px] uppercase tracking-widest py-0.5 px-3 rounded-full border-none shadow-sm", si.color)}>
+                        {si.label}
+                      </Badge>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">Objet : {c.sujet}</p>
+                    <p className="text-sm font-bold text-gray-500 truncate group-hover:text-gray-700 transition-colors">
+                      Objet : {c.sujet}
+                    </p>
                     {c.tags.length > 0 && (
-                      <div className="flex gap-1 mt-1">
+                      <div className="flex gap-2 mt-2.5">
                         {c.tags.slice(0, 3).map(t => (
-                          <span key={t} className="text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">{t}</span>
+                          <span key={t} className="text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg border border-blue-100/50 shadow-sm">
+                            {t}
+                          </span>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Stats */}
+                  {/* Analytics Overview */}
                   {c.statut === "envoye" && (
-                    <div className="hidden sm:flex items-center gap-5 text-center shrink-0">
-                      <div>
-                        <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{N(c.nb_destinataires ?? 0)}</p>
-                        <p className="text-[10px] text-gray-400">Dest.</p>
+                    <div className="hidden lg:flex items-center gap-8 text-center shrink-0 pr-4">
+                      <div className="space-y-1">
+                        <p className="text-base font-black text-gray-900 leading-none">{N(c.nb_destinataires ?? 0)}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Public</p>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-emerald-600">{tauxOuv !== null ? `${tauxOuv}%` : "—"}</p>
-                        <p className="text-[10px] text-gray-400">Ouv.</p>
+                      <div className="space-y-1 border-l border-black/[0.05] pl-8">
+                        <p className="text-base font-black text-emerald-600 leading-none">{tauxOuv !== null ? `${tauxOuv}%` : "—"}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Ouvertures</p>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-blue-600">{N(c.nb_clics)}</p>
-                        <p className="text-[10px] text-gray-400">Clics</p>
+                      <div className="space-y-1 border-l border-black/[0.05] pl-8">
+                        <p className="text-base font-black text-blue-600 leading-none">{N(c.nb_clics)}</p>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Clics</p>
                       </div>
                     </div>
-                  )}
-                  {c.statut === "planifie" && c.date_envoi_prevu && (
-                    <div className="hidden sm:block text-center shrink-0">
-                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                        {format(new Date(c.date_envoi_prevu), "dd MMM yyyy", { locale: fr })}
-                      </p>
-                      <p className="text-[10px] text-gray-400">Envoi prévu</p>
-                    </div>
-                  )}
-                  {c.statut === "brouillon" && (
-                    <p className="hidden sm:block text-xs text-gray-400 shrink-0">
-                      {format(new Date(c.updated_at), "dd MMM yyyy", { locale: fr })}
-                    </p>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                  {/* Planning Info */}
+                  {c.statut === "planifie" && c.date_envoi_prevu && (
+                    <div className="hidden sm:block text-center shrink-0 px-6 border-l border-black/[0.05]">
+                      <p className="text-sm font-black text-amber-700 tracking-tight">
+                        {format(new Date(c.date_envoi_prevu), "dd MMM yyyy", { locale: fr })}
+                      </p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Envoi prévu</p>
+                    </div>
+                  )}
+
+                  {/* Date Meta */}
+                  {c.statut === "brouillon" && (
+                    <div className="hidden sm:block text-right shrink-0 px-6 border-l border-black/[0.05]">
+                      <p className="text-sm font-black text-gray-400 tracking-tight">
+                        {format(new Date(c.updated_at), "dd MMM yyyy", { locale: fr })}
+                      </p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Dernière édit.</p>
+                    </div>
+                  )}
+
+                  {/* Action Controls */}
+                  <div className="flex items-center bg-white p-1.5 rounded-xl border border-black/[0.03] shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0" onClick={e => e.stopPropagation()}>
                     {c.statut !== "envoye" && c.statut !== "archive" && (
-                      <Button variant="outline" size="icon" className="h-7 w-7" title="Marquer comme envoyée"
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Marquer envoyé"
                         onClick={() => markSent(c)}>
-                        <Send size={12} />
+                        <Send size={16} />
                       </Button>
                     )}
-                    <Button variant="outline" size="icon" className="h-7 w-7" title="Modifier" onClick={() => openEdit(c)}>
-                      <Pencil size={12} />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-blue-600 hover:bg-blue-50 rounded-lg" title="Modifier" onClick={() => openEdit(c)}>
+                      <Pencil size={16} />
                     </Button>
-                    <Button variant="outline" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600" title="Supprimer"
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-lg" title="Supprimer"
                       onClick={() => handleDelete(c)}>
-                      <Trash2 size={12} />
+                      <Trash2 size={16} />
                     </Button>
                   </div>
                 </div>
@@ -450,182 +566,235 @@ export default function CampagnesEmail() {
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout
-      title={editingId ? `Campagne — ${form.titre || "…"}` : "Nouvelle Campagne Email"}
-      subtitle="Rédigez et planifiez votre message marketing"
+      title={editingId ? `Édition — ${form.titre || "…"}` : "Nouvelle Offensive Marketing"}
+      subtitle="Concevez un message percutant pour votre audience"
       actions={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setView("list")}>Retour</Button>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" onClick={() => setView("list")} className="rounded-xl font-bold text-gray-500 hover:text-gray-900">
+            Annuler
+          </Button>
+          <div className="w-px h-8 bg-black/[0.05] mx-1" />
           {form.statut === "brouillon" && (
-            <Button variant="outline" size="sm" className="text-amber-700 border-amber-200"
+            <Button variant="outline" className="h-11 rounded-xl font-bold border-amber-200 text-amber-700 hover:bg-amber-50"
               onClick={() => handleSave({ statut: "planifie" })} disabled={saving}>
-              <Clock size={14} className="mr-1" /> Planifier
+              <Clock size={16} className="mr-2" /> 
+              Programmer
             </Button>
           )}
-          <Button variant="outline" size="sm" className="text-emerald-700 border-emerald-200"
-            onClick={() => handleSave({ statut: "envoye", date_envoi_reel: new Date().toISOString() })}
-            disabled={saving || form.statut === "envoye"}>
-            <Send size={14} className="mr-1" /> Marquer envoyée
-          </Button>
-          <Button onClick={() => handleSave()} disabled={saving} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90">
-            {saving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
-            Enregistrer
+          <Button onClick={() => handleSave()} disabled={saving} 
+            className="h-11 px-8 rounded-xl bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 shadow-xl shadow-emerald-900/10 font-bold transition-all hover:scale-[1.02] active:scale-95">
+            {saving ? <Loader2 size={16} className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />}
+            Enregistrer les modifications
           </Button>
         </div>
       }
     >
-      <div className="max-w-4xl space-y-5">
-
-        {/* Identity */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Identité de la campagne</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Titre interne *</Label>
-              <Input placeholder="Ex : Newsletter Avril 2026" value={form.titre}
-                onChange={e => sf("titre", e.target.value)} className="h-9 text-sm" />
+      <div className="max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+        
+        {/* Main Content Area */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Identity Section */}
+          <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm p-8 space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <Pencil size={20} />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">Configuration de l'email</h3>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Objet de l'email *</Label>
-              <Input placeholder="Ex : 🌿 Nos mangues Kent arrivent !" value={form.sujet}
-                onChange={e => sf("sujet", e.target.value)} className="h-9 text-sm" />
-              <p className="text-[10px] text-gray-400">{form.sujet.length}/60 caractères recommandés</p>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Titre de la campagne (interne) *</Label>
+                  <Input 
+                    placeholder="Ex : Newsletter Saisonnière - Mai 2026" 
+                    value={form.titre}
+                    onChange={e => sf("titre", e.target.value)} 
+                    className="h-12 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500/20 transition-all font-bold" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Objet de l'email (public) *</Label>
+                  <div className="relative">
+                    <Input 
+                      placeholder="Ex : 🌿 Les récoltes de Casamance sont là !" 
+                      value={form.sujet}
+                      onChange={e => sf("sujet", e.target.value)} 
+                      className="h-12 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500/20 transition-all font-bold pr-16" 
+                    />
+                    <span className={cn(
+                      "absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase px-2 py-1 rounded-lg",
+                      form.sujet.length > 60 ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-600"
+                    )}>
+                      {form.sujet.length}/60
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Catégorie de communication</Label>
+                  <select value={form.type} onChange={e => sf("type", e.target.value)}
+                    className="w-full h-12 rounded-2xl bg-gray-50 border-transparent px-4 font-bold text-sm outline-none focus:bg-white focus:border-emerald-500/20 transition-all appearance-none cursor-pointer">
+                    {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Audience cible</Label>
+                  <div className="relative">
+                    <select value={form.destinataires} onChange={e => sf("destinataires", e.target.value)}
+                      className="w-full h-12 rounded-2xl bg-gray-50 border-transparent px-4 font-bold text-sm outline-none focus:bg-white focus:border-emerald-500/20 transition-all appearance-none cursor-pointer">
+                      {DESTINATAIRES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                    </select>
+                    <Badge className="absolute right-4 top-1/2 -translate-y-1/2 bg-blue-500 text-white border-none text-[9px] font-black py-1 px-2">
+                      {N(nbAbonnes)} abonnés
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Tags d'organisation</Label>
+                <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-2xl border border-transparent focus-within:bg-white focus-within:border-emerald-500/20 transition-all">
+                  {form.tags.map((t, i) => (
+                    <Badge key={i} className="bg-white text-blue-600 border border-blue-100 shadow-sm font-bold text-[10px] py-1 px-3 flex items-center gap-2 rounded-xl group/tag">
+                      {t}
+                      <button onClick={() => sf("tags", form.tags.filter((_, j) => j !== i))} className="hover:text-red-500 transition-colors">
+                        <X size={12} strokeWidth={3} />
+                      </button>
+                    </Badge>
+                  ))}
+                  <input 
+                    value={tagInput} 
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(); } }}
+                    onBlur={addTag}
+                    placeholder={form.tags.length === 0 ? "Ajouter un tag et appuyer sur Entrée..." : "Suivant..."}
+                    className="flex-1 min-w-[150px] text-sm bg-transparent outline-none placeholder:text-gray-400 font-bold" 
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Type */}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</Label>
-              <select value={form.type} onChange={e => sf("type", e.target.value)}
-                className="w-full h-9 text-sm border border-input rounded-lg px-3 bg-white dark:bg-[#131d2e] text-gray-800 dark:text-gray-200">
-                {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+          {/* Content Editor Section */}
+          <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm p-8 space-y-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <Mail size={20} />
+                </div>
+                <h3 className="text-xl font-black text-gray-900 tracking-tight">Corps du message</h3>
+              </div>
+              <Badge variant="outline" className="text-[10px] font-black uppercase bg-gray-50 text-gray-400 border-none">
+                {form.contenu.length} caractères
+              </Badge>
             </div>
-            {/* Destinataires */}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Destinataires</Label>
-              <select value={form.destinataires} onChange={e => sf("destinataires", e.target.value)}
-                className="w-full h-9 text-sm border border-input rounded-lg px-3 bg-white dark:bg-[#131d2e] text-gray-800 dark:text-gray-200">
-                {DESTINATAIRES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-              </select>
-              <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">{N(nbAbonnes)} abonnés disponibles</p>
-            </div>
-            {/* Date envoi prévu */}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date d'envoi prévue</Label>
-              <Input type="datetime-local"
-                value={form.date_envoi_prevu ? form.date_envoi_prevu.slice(0,16) : ""}
-                onChange={e => sf("date_envoi_prevu", e.target.value ? new Date(e.target.value).toISOString() : null)}
-                className="h-9 text-sm" />
-            </div>
-          </div>
 
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tags</Label>
-            <div className="flex flex-wrap gap-1.5 items-center border border-input rounded-lg px-2.5 py-1.5 bg-white dark:bg-[#131d2e] min-h-[36px]">
-              {form.tags.map((t, i) => (
-                <span key={i} className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full">
-                  {t}
-                  <button onClick={() => sf("tags", form.tags.filter((_, j) => j !== i))} className="hover:text-red-500"><X size={10} /></button>
-                </span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: "Salutation", text: "Bonjour {prénom},\n\n", icon: Users },
+                { label: "CTA Boutique", text: "\n\n👉 Découvrez notre boutique : https://coopzig.com/prix\n", icon: MousePointerClick },
+                { label: "Signature",  text: "\n\nCordialement,\nL'équipe CoopZig / Casamance\nwww.coopzig.com", icon: CheckCircle2 },
+              ].map(t => (
+                <button key={t.label}
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-black/[0.03] rounded-xl px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-100 transition-all bg-gray-50/50 shadow-sm"
+                  onClick={() => sf("contenu", form.contenu + t.text)}>
+                  <t.icon size={12} />
+                  {t.label}
+                </button>
               ))}
-              <input value={tagInput} onChange={e => setTagInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(); } }}
-                onBlur={addTag}
-                placeholder={form.tags.length === 0 ? "Ajouter un tag…" : ""}
-                className="flex-1 min-w-[100px] text-sm bg-transparent outline-none placeholder:text-gray-400 py-0.5" />
             </div>
+
+            <Textarea
+              value={form.contenu}
+              onChange={e => sf("contenu", e.target.value)}
+              placeholder="Rédigez votre message ici. Vous pouvez utiliser des balises dynamiques comme {prénom}."
+              className="min-h-[400px] rounded-3xl bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500/20 transition-all font-medium leading-relaxed p-6 text-base"
+            />
           </div>
         </div>
 
-        {/* Content */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Contenu de l'email</p>
-            <span className="text-[10px] text-gray-400">{form.contenu.length} caractères</span>
-          </div>
-
-          {/* Quick-insert templates */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { label: "Salutation", text: "Bonjour {prénom},\n\n" },
-              { label: "CTA Boutique", text: "\n\n👉 Découvrez notre boutique : https://coopzig.com/prix\n" },
-              { label: "Clôture",  text: "\n\nCordialement,\nL'équipe CoopZig / ETAAM\nwww.coopzig.com" },
-            ].map(t => (
-              <button key={t.label}
-                className="text-[10px] font-medium border border-gray-200 dark:border-[#1e2d45] rounded-lg px-2.5 py-1 hover:bg-gray-50 dark:hover:bg-white/[0.04] text-gray-600 dark:text-gray-400 transition-colors"
-                onClick={() => sf("contenu", form.contenu + t.text)}>
-                + {t.label}
-              </button>
-            ))}
-          </div>
-
-          <Textarea
-            value={form.contenu}
-            onChange={e => sf("contenu", e.target.value)}
-            placeholder="Rédigez le contenu de votre email ici…&#10;&#10;Vous pouvez utiliser des variables comme {prénom}, {ville}…"
-            className="min-h-[280px] text-sm font-mono leading-relaxed"
-          />
-
-          {/* Live preview snippet */}
-          {form.contenu && (
-            <div className="bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#1e2d45] rounded-lg p-4">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold mb-2">Aperçu</p>
-              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[120px] overflow-y-auto">
-                {form.contenu}
+        {/* Sidebar Controls */}
+        <div className="space-y-8">
+          {/* Scheduling Card */}
+          <div className="bg-white rounded-[2.5rem] border border-black/[0.03] shadow-sm p-8 space-y-6">
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+              <Clock size={16} className="text-amber-500" />
+              Planification
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Date d'envoi programmée</Label>
+                <Input type="datetime-local"
+                  value={form.date_envoi_prevu ? form.date_envoi_prevu.slice(0,16) : ""}
+                  onChange={e => sf("date_envoi_prevu", e.target.value ? new Date(e.target.value).toISOString() : null)}
+                  className="h-12 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-emerald-500/20 transition-all font-bold" 
+                />
               </div>
+              <p className="text-[11px] text-gray-400 leading-relaxed italic">
+                L'envoi sera déclenché automatiquement à la date indiquée si le statut est mis sur "Planifié".
+              </p>
+            </div>
+          </div>
+
+          {/* Performance Card (if sent) */}
+          {editingId && form.statut === "envoye" && (
+            <div className="bg-[#0B1910] rounded-[2.5rem] border border-black/[0.03] shadow-xl p-8 space-y-6">
+              <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                <BarChart2 size={16} />
+                Métriques de performance
+              </h3>
+              <div className="space-y-6">
+                {[
+                  { label: "Destinataires réels", field: "nb_destinataires", icon: Users },
+                  { label: "Ouvertures cumulées", field: "nb_ouverts",       icon: Eye },
+                  { label: "Clics enregistrés",    field: "nb_clics",         icon: MousePointerClick },
+                ].map(({ label, field, icon: Icon }) => (
+                  <div key={field} className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1 flex items-center gap-2">
+                      <Icon size={12} />
+                      {label}
+                    </Label>
+                    <Input type="number" min={0} value={(form as any)[field] ?? ""}
+                      onChange={e => sf(field, Number(e.target.value))}
+                      className="h-12 rounded-2xl bg-white/5 border-white/10 text-white font-black text-lg focus:bg-white/10 transition-all" 
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Internal Notes */}
+          <div className="bg-gray-50/50 rounded-[2.5rem] border border-black/[0.03] p-8 space-y-4">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              <Archive size={14} />
+              Notes de suivi internes
+            </h3>
+            <Textarea 
+              value={form.notes ?? ""}
+              onChange={e => sf("notes", e.target.value || null)}
+              placeholder="Observation sur cette campagne..."
+              className="min-h-[120px] rounded-2xl bg-white border-black/[0.05] text-sm font-medium p-4" 
+            />
+          </div>
+
+          {/* Destructive Action */}
+          {editingId && (
+            <div className="pt-4 px-4">
+              <Button 
+                variant="ghost" 
+                className="w-full h-12 rounded-2xl text-red-400 hover:text-red-500 hover:bg-red-50 font-bold transition-all border border-transparent hover:border-red-100"
+                onClick={() => handleDelete(campagnes.find(c => c.id === editingId)!)}>
+                <Trash2 size={18} className="mr-2" /> 
+                Supprimer la campagne
+              </Button>
             </div>
           )}
         </div>
 
-        {/* Stats (edit mode for sent campaigns) */}
-        {editingId && form.statut === "envoye" && (
-          <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-5 space-y-3">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Statistiques de performance</p>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: "Destinataires", field: "nb_destinataires", icon: Users },
-                { label: "Ouvertures",    field: "nb_ouverts",       icon: Eye },
-                { label: "Clics",         field: "nb_clics",         icon: MousePointerClick },
-              ].map(({ label, field, icon: Icon }) => (
-                <div key={field} className="space-y-1">
-                  <Label className="text-xs text-gray-500 flex items-center gap-1"><Icon size={11} />{label}</Label>
-                  <Input type="number" min={0} value={(form as any)[field] ?? ""}
-                    onChange={e => sf(field, Number(e.target.value))}
-                    className="h-9 text-sm" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Notes */}
-        <div className="bg-white dark:bg-[#131d2e] rounded-xl border border-gray-100 dark:border-[#1e2d45] shadow-sm p-5 space-y-2">
-          <Label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Notes internes</Label>
-          <Textarea value={form.notes ?? ""}
-            onChange={e => sf("notes", e.target.value || null)}
-            placeholder="Notes visibles uniquement en interne…"
-            className="min-h-[60px] text-sm" />
-        </div>
-
-        {/* Bottom actions */}
-        <div className="flex items-center justify-between pb-8">
-          <Button variant="outline" onClick={() => setView("list")}>Retour à la liste</Button>
-          <div className="flex gap-2">
-            {editingId && (
-              <Button variant="outline" className="text-red-500 border-red-200 hover:bg-red-50"
-                onClick={() => handleDelete(campagnes.find(c => c.id === editingId)!)}>
-                <Trash2 size={14} className="mr-1" /> Supprimer
-              </Button>
-            )}
-            <Button onClick={() => handleSave()} disabled={saving} className="bg-[#1A2E1C] text-white hover:bg-[#1A2E1C]/90 px-8">
-              {saving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
-              Enregistrer
-            </Button>
-          </div>
-        </div>
       </div>
     </DashboardLayout>
   );

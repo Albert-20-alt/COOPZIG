@@ -5,7 +5,7 @@ import { useActivityLog } from "@/hooks/useActivityLog";
 import {
   Mail, Clock, CheckCircle2, Archive, ArchiveRestore,
   Reply, Trash2, Search, Send, Loader2, Bell, Download,
-  Inbox, MailOpen, MailCheck,
+  Inbox, MailOpen, MailCheck, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -66,6 +66,8 @@ function avatarColor(name: string) {
 const NewsletterTab = () => {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const confirm = useConfirm();
 
   const { data: subs = [], isLoading } = useQuery({
@@ -92,6 +94,8 @@ const NewsletterTab = () => {
   });
 
   const filtered = subs.filter(s => s.email.toLowerCase().includes(search.toLowerCase()));
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const exportCsv = () => {
     const rows = ["Email,Date inscription", ...subs.map(s =>
@@ -152,9 +156,9 @@ const NewsletterTab = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-white/[0.04]">
-              {filtered.map((sub, i) => (
+              {paginated.map((sub, i) => (
                 <tr key={sub.id} className="group hover:bg-gray-50/70 dark:hover:bg-white/[0.03] transition-colors">
-                  <td className="px-6 py-3.5 text-xs text-gray-400 font-mono">{i + 1}</td>
+                  <td className="px-6 py-3.5 text-xs text-gray-400 font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td className="px-6 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0", avatarColor(sub.email))}>
@@ -189,8 +193,53 @@ const NewsletterTab = () => {
         </div>
       )}
     </div>
-  );
-};
+
+    {totalPages > 1 && (
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-5 border-t border-gray-100 dark:border-[#1e2d45] bg-gray-50/30 dark:bg-white/[0.01] gap-4">
+        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+          Index {(page - 1) * PAGE_SIZE + 1} – {Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} abonnés
+        </div>
+        
+        <div className="flex items-center gap-1.5">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1} 
+            className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+          >
+            <ChevronLeft size={16} />
+          </Button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
+            <Button
+              key={pg}
+              variant={page === pg ? "default" : "outline"}
+              onClick={() => setPage(pg)}
+              className={cn(
+                "h-9 w-9 rounded-xl text-xs font-bold transition-all",
+                page === pg 
+                  ? "bg-[#1A2E1C] dark:bg-emerald-800 text-white shadow-lg shadow-emerald-900/20" 
+                  : "border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-500 hover:bg-gray-50 dark:hover:bg-white/10"
+              )}
+            >
+              {pg}
+            </Button>
+          ))}
+
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+            disabled={page === totalPages} 
+            className="h-9 w-9 rounded-xl border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+          >
+            <ChevronRight size={16} />
+          </Button>
+        </div>
+      </div>
+    )}
+  </div>
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const AdminMessages = () => {
@@ -201,9 +250,9 @@ const AdminMessages = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Toutes");
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [page, setPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const confirm = useConfirm();
-  const PAGE_SIZE = 30;
+  const PAGE_SIZE = 15;
 
   const { data: allMessages = [] } = useQuery({
     queryKey: ["contact_messages_all"],
@@ -218,7 +267,7 @@ const AdminMessages = () => {
   });
 
   const { data: listData, isLoading } = useQuery({
-    queryKey: ["contact_messages", page, searchQuery, statusFilter],
+    queryKey: ["contact_messages", currentPage, searchQuery, statusFilter],
     queryFn: async () => {
       let q = (supabase as any)
         .from("contact_messages")
@@ -226,7 +275,7 @@ const AdminMessages = () => {
         .order("created_at", { ascending: false });
       if (searchQuery) q = q.or(`nom_complet.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,sujet.ilike.%${searchQuery}%`);
       if (statusFilter !== "Toutes") q = q.eq("statut", statusFilter);
-      const from = page * PAGE_SIZE;
+      const from = (currentPage - 1) * PAGE_SIZE;
       const { data, count, error } = await q.range(from, from + PAGE_SIZE - 1);
       if (error) throw error;
       return { messages: data as ContactMessage[], total: count || 0 };
@@ -348,7 +397,7 @@ const AdminMessages = () => {
                   <Input
                     placeholder="Nom, email, sujet…"
                     value={searchQuery}
-                    onChange={e => { setSearchQuery(e.target.value); setPage(0); }}
+                    onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     className="pl-8 h-9 bg-gray-50 dark:bg-white/[0.04] border-transparent focus:bg-white dark:focus:bg-white/[0.08] text-sm rounded-lg"
                   />
                 </div>
@@ -359,7 +408,7 @@ const AdminMessages = () => {
                 {statusTabs.map(st => (
                   <button
                     key={st.key}
-                    onClick={() => { setStatusFilter(st.key); setPage(0); }}
+                    onClick={() => { setStatusFilter(st.key); setCurrentPage(1); }}
                     className={cn(
                       "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all",
                       statusFilter === st.key
@@ -448,10 +497,31 @@ const AdminMessages = () => {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-4 py-2.5 border-t border-gray-100 dark:border-[#1e2d45] flex items-center justify-between">
-                  <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500 text-xs px-2">←</button>
-                  <span className="text-xs text-gray-400">{page + 1} / {totalPages}</span>
-                  <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="p-1.5 rounded-lg border border-gray-200 dark:border-white/10 disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500 text-xs px-2">→</button>
+                <div className="px-4 py-3 border-t border-gray-100 dark:border-[#1e2d45] flex items-center justify-between bg-gray-50/30 dark:bg-white/[0.01]">
+                  <div className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                    Page {currentPage} / {totalPages}
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                      disabled={currentPage === 1} 
+                      className="h-7 w-7 rounded-lg border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+                    >
+                      <ChevronLeft size={12} />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                      disabled={currentPage === totalPages} 
+                      className="h-7 w-7 rounded-lg border-gray-100 dark:border-white/5 bg-white dark:bg-[#1a2333] text-gray-400 hover:text-emerald-600 transition-all shadow-sm"
+                    >
+                      <ChevronRight size={12} />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
