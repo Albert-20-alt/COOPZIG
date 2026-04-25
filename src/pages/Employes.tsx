@@ -51,14 +51,17 @@ function StatutBadge({ statut }: { statut: string }) {
   );
 }
 
-function EmployeCard({ emp, canEdit, producteurs, onEdit, onDelete }: {
+function EmployeCard({ emp, canEdit, producteurs, onEdit, onDelete, onView }: {
   emp: Employe; canEdit: boolean; producteurs: Producteur[];
-  onEdit: () => void; onDelete: () => void;
+  onEdit: () => void; onDelete: () => void; onView: () => void;
 }) {
   const prod = producteurs.find((p) => p.id === emp.producteur_id);
   const initials = `${emp.prenom[0]}${emp.nom[0]}`.toUpperCase();
   return (
-    <div className="group bg-white dark:bg-[#0d1525] rounded-2xl border border-gray-100 dark:border-[#1e2d45] p-4 hover:border-gray-200 dark:hover:border-[#2a3f5f] hover:shadow-sm transition-all">
+    <div
+      onClick={onView}
+      className="group bg-white dark:bg-[#0d1525] rounded-2xl border border-gray-100 dark:border-[#1e2d45] p-4 hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md transition-all cursor-pointer"
+    >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-bold flex items-center justify-center text-sm shrink-0">
           {initials}
@@ -75,10 +78,10 @@ function EmployeCard({ emp, canEdit, producteurs, onEdit, onDelete }: {
             </div>
             {canEdit && (
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <button onClick={onEdit} className="p-1 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600">
+                <button onClick={e => { e.stopPropagation(); onEdit(); }} className="p-1 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600">
                   <Edit2 size={13} />
                 </button>
-                <button onClick={onDelete} className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600">
+                <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600">
                   <Trash2 size={13} />
                 </button>
               </div>
@@ -100,13 +103,13 @@ function EmployeCard({ emp, canEdit, producteurs, onEdit, onDelete }: {
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3">
             {emp.telephone && (
-              <a href={`tel:${emp.telephone}`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-600">
+              <a href={`tel:${emp.telephone}`} onClick={e => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-600">
                 <Phone size={11} />
                 {emp.telephone}
               </a>
             )}
             {emp.email_contact && (
-              <a href={`mailto:${emp.email_contact}`} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-600 truncate">
+              <a href={`mailto:${emp.email_contact}`} onClick={e => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-600 truncate">
                 <Mail size={11} />
                 {emp.email_contact}
               </a>
@@ -130,6 +133,139 @@ function EmployeCard({ emp, canEdit, producteurs, onEdit, onDelete }: {
   );
 }
 
+function EmployeDetail({ emp, canEdit, producteurs, onClose, onEdit, onDelete }: {
+  emp: Employe; canEdit: boolean; producteurs: Producteur[];
+  onClose: () => void; onEdit: () => void; onDelete: () => void;
+}) {
+  const prod = producteurs.find((p) => p.id === emp.producteur_id);
+  const initials = `${emp.prenom[0]}${emp.nom[0]}`.toUpperCase();
+  const statut = STATUTS.find((s) => s.id === emp.statut) ?? STATUTS[2];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md bg-white dark:bg-[#0d1525] rounded-2xl shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start gap-4 p-5 border-b border-gray-100 dark:border-[#1e2d45]">
+          <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-black flex items-center justify-center text-lg shrink-0">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                  {emp.prenom} {emp.nom}
+                </h2>
+                {emp.poste && <p className="text-sm text-gray-500 mt-0.5">{emp.poste}</p>}
+              </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] ml-2 shrink-0">
+                <X size={16} className="text-gray-400" />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statut.color}`}>
+                {statut.label}
+              </span>
+              {emp.departement && (
+                <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                  <Building2 size={10} /> {emp.departement}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 space-y-3 max-h-[55vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {emp.telephone && (
+              <a href={`tel:${emp.telephone}`} className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] hover:bg-emerald-50 transition-colors">
+                <Phone size={14} className="text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Téléphone</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{emp.telephone}</p>
+                </div>
+              </a>
+            )}
+            {emp.email_contact && (
+              <a href={`mailto:${emp.email_contact}`} className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] hover:bg-blue-50 transition-colors col-span-2">
+                <Mail size={14} className="text-blue-500 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Email</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{emp.email_contact}</p>
+                </div>
+              </a>
+            )}
+            {emp.date_embauche && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04]">
+                <Calendar size={14} className="text-gray-400 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Embauche</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    {format(parseISO(emp.date_embauche), "d MMM yyyy", { locale: fr })}
+                  </p>
+                </div>
+              </div>
+            )}
+            {emp.salaire != null && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04]">
+                <Coins size={14} className="text-amber-500 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Salaire</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    {emp.salaire.toLocaleString("fr-FR")} FCFA
+                  </p>
+                </div>
+              </div>
+            )}
+            {prod && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04] col-span-2">
+                <Users size={14} className="text-purple-500 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Producteur affilié</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{prod.nom}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          {emp.notes && (
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04]">
+              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1.5">Notes</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{emp.notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-[#1e2d45]">
+          {canEdit && (
+            <button
+              onClick={onDelete}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={14} /> Supprimer
+            </button>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#1e2d45] text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50">
+            Fermer
+          </button>
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1A2E1C] text-white text-sm font-semibold hover:bg-[#1A2E1C]/90"
+            >
+              <Edit2 size={14} /> Modifier
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Employes() {
   const { user } = useAuth();
   const { canWrite } = useMyPermissions();
@@ -142,6 +278,7 @@ export default function Employes() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Employe | null>(null);
   const [form, setForm] = useState<Partial<Employe>>(EMPTY_FORM);
+  const [viewingEmp, setViewingEmp] = useState<Employe | null>(null);
 
   const { data: employes = [], isLoading } = useQuery<Employe[]>({
     queryKey: ["employes"],
@@ -176,7 +313,10 @@ export default function Employes() {
         (e) =>
           `${e.prenom} ${e.nom}`.toLowerCase().includes(q) ||
           (e.poste ?? "").toLowerCase().includes(q) ||
-          (e.telephone ?? "").includes(q)
+          (e.departement ?? "").toLowerCase().includes(q) ||
+          (e.telephone ?? "").includes(q) ||
+          (e.email_contact ?? "").toLowerCase().includes(q) ||
+          (e.notes ?? "").toLowerCase().includes(q)
       );
     }
     return list;
@@ -302,6 +442,11 @@ export default function Employes() {
               placeholder="Rechercher un employé…"
               className="flex-1 text-sm bg-transparent focus:outline-none text-gray-700 dark:text-gray-300 placeholder-gray-400"
             />
+            {search && (
+              <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600">
+                <X size={14} />
+              </button>
+            )}
           </div>
           <div className="flex gap-2 flex-wrap">
             <select
@@ -347,6 +492,7 @@ export default function Employes() {
                 emp={emp}
                 canEdit={canEdit}
                 producteurs={producteurs}
+                onView={() => setViewingEmp(emp)}
                 onEdit={() => openEdit(emp)}
                 onDelete={() => del.mutate(emp.id)}
               />
@@ -354,6 +500,18 @@ export default function Employes() {
           </div>
         )}
       </div>
+
+      {/* Detail Modal */}
+      {viewingEmp && (
+        <EmployeDetail
+          emp={viewingEmp}
+          canEdit={canEdit}
+          producteurs={producteurs}
+          onClose={() => setViewingEmp(null)}
+          onEdit={() => { setViewingEmp(null); openEdit(viewingEmp); }}
+          onDelete={() => { del.mutate(viewingEmp.id); setViewingEmp(null); }}
+        />
+      )}
 
       {/* Form Modal */}
       {showForm && (
