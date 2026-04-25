@@ -253,13 +253,170 @@ const TacheForm = ({
   );
 };
 
+// ── Tâche detail modal ────────────────────────────────────────────────────────
+const TacheDetail = ({ tache, onClose, onEdit, onDelete }: {
+  tache: Tache; onClose: () => void; onEdit: () => void; onDelete: () => void;
+}) => {
+  const tcfg = TYPE_CFG[tache.type] ?? TYPE_CFG.tache;
+  const pcfg = PRIORITE_CFG[tache.priorite] ?? PRIORITE_CFG.normale;
+  const scfg = STATUTS.find(s => s.id === tache.statut) ?? STATUTS[0];
+  const Icon = tcfg.icon;
+  const isDone = tache.statut === "termine";
+  const isOverdue = tache.date_echeance && isPast(parseISO(tache.date_echeance)) && !isDone;
+
+  return (
+    <Dialog open onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-xl p-0 rounded-[2rem] border border-black/[0.06] shadow-[0_40px_100px_-15px_rgba(0,0,0,0.3)] bg-white overflow-hidden">
+        {/* Header */}
+        <div className="relative bg-[#0B1910] px-7 py-5 overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-900/30 rounded-full blur-[80px] pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-start gap-3">
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", tcfg.bg)}>
+                <Icon size={18} className={tcfg.color} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className={cn("text-base font-bold text-white leading-snug", isDone && "line-through opacity-70")}>
+                  {tache.titre}
+                </h2>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-md border", tcfg.bg, tcfg.color, tcfg.border)}>
+                    {tcfg.label}
+                  </span>
+                  <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-md", pcfg.bg, pcfg.color)}>
+                    <Flag size={9} className="inline mr-0.5" />{pcfg.label}
+                  </span>
+                  <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-md", scfg.color)}>
+                    {scfg.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white bg-white/5 hover:bg-white/10 rounded-full p-1.5 transition-all">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+          {tache.description && (
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Description</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{tache.description}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {tache.date_echeance && (
+              <div className={cn("flex items-center gap-2 p-3 rounded-xl", isOverdue ? "bg-red-50" : "bg-gray-50")}>
+                <Clock size={14} className={isOverdue ? "text-red-500" : "text-gray-400"} />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Échéance</p>
+                  <p className={cn("text-sm font-semibold", isOverdue ? "text-red-600" : "text-gray-800")}>
+                    {format(parseISO(tache.date_echeance), "d MMM yyyy", { locale: fr })}
+                    {isOverdue && " · En retard"}
+                  </p>
+                </div>
+              </div>
+            )}
+            {tache.date_debut && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50">
+                <CalendarClock size={14} className="text-gray-400" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Début</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {format(parseISO(tache.date_debut), "d MMM · HH:mm", { locale: fr })}
+                  </p>
+                </div>
+              </div>
+            )}
+            {tache.date_fin && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50">
+                <CalendarClock size={14} className="text-gray-400" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Fin</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {format(parseISO(tache.date_fin), "d MMM · HH:mm", { locale: fr })}
+                  </p>
+                </div>
+              </div>
+            )}
+            {tache.lieu && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50">
+                <MapPinIcon size={14} className="text-gray-400" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Lieu</p>
+                  <p className="text-sm font-semibold text-gray-800">{tache.lieu}</p>
+                </div>
+              </div>
+            )}
+            {tache.rappel_minutes != null && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50">
+                <Bell size={14} className="text-gray-400" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Rappel</p>
+                  <p className="text-sm font-semibold text-gray-800">{tache.rappel_minutes} min avant</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {(tache.participants ?? []).length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <Users size={11} /> Participants
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {tache.participants!.map(p => (
+                  <span key={p} className="px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-medium text-gray-700">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(tache.tags ?? []).length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <Tag size={11} /> Tags
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {tache.tags!.map(tag => (
+                  <span key={tag} className="px-2 py-0.5 rounded bg-gray-100 text-[11px] font-bold text-gray-500">#{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-[10px] text-gray-300">
+            Créée le {format(parseISO(tache.created_at), "d MMMM yyyy", { locale: fr })}
+          </p>
+        </div>
+
+        {/* Footer actions */}
+        <div className="flex gap-2 px-6 py-4 border-t border-gray-100">
+          <Button variant="ghost" onClick={onDelete} className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl">
+            <Trash2 size={14} className="mr-1.5" /> Supprimer
+          </Button>
+          <div className="flex-1" />
+          <Button variant="outline" onClick={onClose} className="rounded-xl">Fermer</Button>
+          <Button onClick={onEdit} className="bg-[#1A2E1C] text-white hover:bg-emerald-800 rounded-xl px-5 font-bold">
+            <Edit3 size={14} className="mr-1.5" /> Modifier
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // ── Kanban card ───────────────────────────────────────────────────────────────
-const KanbanCard = ({ tache, onEdit, onDelete, onStatut, onDragStart }: {
+const KanbanCard = ({ tache, onEdit, onDelete, onStatut, onDragStart, onView }: {
   tache: Tache;
   onEdit: () => void;
   onDelete: () => void;
   onStatut: (s: string) => void;
   onDragStart: (e: React.DragEvent) => void;
+  onView: () => void;
 }) => {
   const tcfg = TYPE_CFG[tache.type] ?? TYPE_CFG.tache;
   const pcfg = PRIORITE_CFG[tache.priorite] ?? PRIORITE_CFG.normale;
@@ -271,13 +428,14 @@ const KanbanCard = ({ tache, onEdit, onDelete, onStatut, onDragStart }: {
     <div
       draggable
       onDragStart={onDragStart}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 group hover:shadow-md hover:border-gray-200 transition-all cursor-grab active:cursor-grabbing active:opacity-50 active:scale-[0.98]"
+      onClick={onView}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 group hover:shadow-md hover:border-gray-200 transition-all cursor-pointer active:opacity-50 active:scale-[0.98]"
     >
       {/* Top row */}
       <div className="flex items-start justify-between mb-3 gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <button
-            onClick={() => onStatut(isDone ? "a_faire" : "termine")}
+            onClick={e => { e.stopPropagation(); onStatut(isDone ? "a_faire" : "termine"); }}
             className="flex-shrink-0 text-gray-300 hover:text-emerald-500 transition-colors"
           >
             {isDone
@@ -289,10 +447,10 @@ const KanbanCard = ({ tache, onEdit, onDelete, onStatut, onDragStart }: {
           </span>
         </div>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-          <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+          <button onClick={e => { e.stopPropagation(); onEdit(); }} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
             <Edit3 size={13} />
           </button>
-          <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+          <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
             <Trash2 size={13} />
           </button>
         </div>
@@ -433,6 +591,7 @@ const Taches = () => {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Tache | null>(null);
+  const [viewingTache, setViewingTache] = useState<Tache | null>(null);
 
   const { data: taches = [], isLoading } = useQuery<Tache[]>({
     queryKey: ["taches", user?.id],
@@ -482,8 +641,9 @@ const Taches = () => {
     enRetard: taches.filter(t => t.date_echeance && isPast(parseISO(t.date_echeance)) && t.statut !== "termine").length,
   }), [taches]);
 
-  const openEdit = (t: Tache) => { setEditing(t); setFormOpen(true); };
+  const openEdit = (t: Tache) => { setViewingTache(null); setEditing(t); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditing(null); };
+  const openView = (t: Tache) => setViewingTache(t);
 
   return (
     <DashboardLayout title="Mes Tâches" subtitle="Agenda personnel, notes, visites et suivis">
@@ -596,7 +756,8 @@ const Taches = () => {
                           onEdit={() => openEdit(t)}
                           onDelete={() => deleteTache.mutate(t.id)}
                           onStatut={s => updateStatut.mutate({ id: t.id, statut: s })}
-                          onDragStart={e => { e.dataTransfer.setData("tache_id", t.id); e.dataTransfer.effectAllowed = "move"; }} />
+                          onDragStart={e => { e.dataTransfer.setData("tache_id", t.id); e.dataTransfer.effectAllowed = "move"; }}
+                          onView={() => openView(t)} />
                       ))}
                     </div>
                     {/* Quick add */}
@@ -626,9 +787,9 @@ const Taches = () => {
                     const isDone = t.statut === "termine";
                     const isOverdue = t.date_echeance && isPast(parseISO(t.date_echeance)) && !isDone;
                     return (
-                      <div key={t.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 group transition-colors">
+                      <div key={t.id} onClick={() => openView(t)} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 group transition-colors cursor-pointer">
                         {/* Checkbox */}
-                        <button onClick={() => updateStatut.mutate({ id: t.id, statut: isDone ? "a_faire" : "termine" })}
+                        <button onClick={e => { e.stopPropagation(); updateStatut.mutate({ id: t.id, statut: isDone ? "a_faire" : "termine" }); }}
                           className="flex-shrink-0 text-gray-300 hover:text-emerald-500 transition-colors">
                           {isDone ? <CheckCircle2 size={19} className="text-emerald-500" /> : <Circle size={19} />}
                         </button>
@@ -659,10 +820,10 @@ const Taches = () => {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md", pcfg.bg, pcfg.color)}>{pcfg.label}</span>
                           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                            <button onClick={() => openEdit(t)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                            <button onClick={e => { e.stopPropagation(); openEdit(t); }} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
                               <Edit3 size={13} />
                             </button>
-                            <button onClick={() => deleteTache.mutate(t.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                            <button onClick={e => { e.stopPropagation(); deleteTache.mutate(t.id); }} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -680,6 +841,16 @@ const Taches = () => {
           )
         )}
       </div>
+
+      {/* Detail modal */}
+      {viewingTache && (
+        <TacheDetail
+          tache={viewingTache}
+          onClose={() => setViewingTache(null)}
+          onEdit={() => openEdit(viewingTache)}
+          onDelete={() => { deleteTache.mutate(viewingTache.id); setViewingTache(null); }}
+        />
+      )}
 
       {/* Form dialog */}
       {formOpen && user && (

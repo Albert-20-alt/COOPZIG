@@ -48,13 +48,16 @@ function EventBadge({ type }: { type: string }) {
   );
 }
 
-function EventCard({ ev, canEdit, onEdit, onDelete }: {
-  ev: Evenement; canEdit: boolean; onEdit: () => void; onDelete: () => void;
+function EventCard({ ev, canEdit, onEdit, onDelete, onView }: {
+  ev: Evenement; canEdit: boolean; onEdit: () => void; onDelete: () => void; onView: () => void;
 }) {
   const cfg = TYPE_CONFIG[ev.type] ?? TYPE_CONFIG.autre;
   const Icon = cfg.icon;
   return (
-    <div className="group flex gap-3 p-4 rounded-2xl border border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm transition-all">
+    <div
+      onClick={onView}
+      className="group flex gap-3 p-4 rounded-2xl border border-gray-100 bg-white hover:border-emerald-200 hover:shadow-sm transition-all cursor-pointer"
+    >
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
         <Icon size={18} className={cfg.color} />
       </div>
@@ -63,10 +66,10 @@ function EventCard({ ev, canEdit, onEdit, onDelete }: {
           <p className="text-sm font-semibold text-gray-900 leading-tight">{ev.title}</p>
           {canEdit && (
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <button onClick={onEdit} className="p-1 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600">
+              <button onClick={e => { e.stopPropagation(); onEdit(); }} className="p-1 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600">
                 <Edit2 size={13} />
               </button>
-              <button onClick={onDelete} className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600">
+              <button onClick={e => { e.stopPropagation(); onDelete(); }} className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600">
                 <Trash2 size={13} />
               </button>
             </div>
@@ -98,6 +101,105 @@ function EventCard({ ev, canEdit, onEdit, onDelete }: {
   );
 }
 
+function EventDetail({ ev, canEdit, onClose, onEdit, onDelete }: {
+  ev: Evenement; canEdit: boolean; onClose: () => void; onEdit: () => void; onDelete: () => void;
+}) {
+  const cfg = TYPE_CONFIG[ev.type] ?? TYPE_CONFIG.autre;
+  const Icon = cfg.icon;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md bg-white dark:bg-[#0d1525] rounded-2xl shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`p-5 ${cfg.bg}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/60 flex items-center justify-center shrink-0">
+                <Icon size={20} className={cfg.color} />
+              </div>
+              <div>
+                <p className={`text-xs font-bold uppercase tracking-wider ${cfg.color} opacity-70`}>{cfg.label}</p>
+                <h2 className="text-base font-bold text-gray-900 mt-0.5 leading-snug">{ev.title}</h2>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-black/10 text-gray-500 shrink-0">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 space-y-3">
+          <div className="grid grid-cols-1 gap-3">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04]">
+              <Clock size={15} className="text-gray-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Date & heure</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-0.5">
+                  {ev.all_day
+                    ? format(parseISO(ev.date_debut), "EEEE d MMMM yyyy", { locale: fr })
+                    : format(parseISO(ev.date_debut), "EEEE d MMMM yyyy · HH:mm", { locale: fr })}
+                </p>
+                {ev.date_fin && !ev.all_day && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Jusqu'à {format(parseISO(ev.date_fin), "HH:mm", { locale: fr })}
+                  </p>
+                )}
+                {ev.all_day && <p className="text-xs text-gray-400 mt-0.5">Journée entière</p>}
+              </div>
+            </div>
+
+            {ev.lieu && (
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04]">
+                <MapPin size={15} className="text-gray-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Lieu</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mt-0.5">{ev.lieu}</p>
+                </div>
+              </div>
+            )}
+
+            {ev.description && (
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/[0.04]">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Description</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {ev.description}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-2 px-5 py-4 border-t border-gray-100 dark:border-[#1e2d45]">
+          {canEdit && (
+            <button
+              onClick={onDelete}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={14} /> Supprimer
+            </button>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#1e2d45] text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50">
+            Fermer
+          </button>
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1A2E1C] text-white text-sm font-semibold hover:bg-[#1A2E1C]/90"
+            >
+              <Edit2 size={14} /> Modifier
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Agenda() {
   const { user } = useAuth();
   const { roles } = useMyPermissions();
@@ -108,6 +210,7 @@ export default function Agenda() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Evenement | null>(null);
+  const [viewingEvent, setViewingEvent] = useState<Evenement | null>(null);
   const [form, setForm] = useState<Partial<Evenement>>(EMPTY);
 
   const monthStart = startOfMonth(currentMonth);
@@ -316,6 +419,7 @@ export default function Agenda() {
                         key={ev.id}
                         ev={ev}
                         canEdit={canEdit}
+                        onView={() => setViewingEvent(ev)}
                         onEdit={() => openEdit(ev)}
                         onDelete={() => del.mutate(ev.id)}
                       />
@@ -346,6 +450,7 @@ export default function Agenda() {
                       key={ev.id}
                       ev={ev}
                       canEdit={canEdit}
+                      onView={() => setViewingEvent(ev)}
                       onEdit={() => openEdit(ev)}
                       onDelete={() => del.mutate(ev.id)}
                     />
@@ -468,6 +573,17 @@ export default function Agenda() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Event detail modal */}
+      {viewingEvent && (
+        <EventDetail
+          ev={viewingEvent}
+          canEdit={canEdit}
+          onClose={() => setViewingEvent(null)}
+          onEdit={() => { setViewingEvent(null); openEdit(viewingEvent); }}
+          onDelete={() => { del.mutate(viewingEvent.id); setViewingEvent(null); }}
+        />
       )}
     </DashboardLayout>
   );
