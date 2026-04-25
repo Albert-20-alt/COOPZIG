@@ -41,10 +41,10 @@ export const ALL_MODULES = [
 
 // Default module access per role
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  commercial: ["dashboard", "marketplace", "commandes", "precommandes", "demandes", "logistique", "messages", "clients", "performances", "taches", "messages_internes", "agenda"],
-  marketing:  ["dashboard", "tendances", "prix_marche", "messages", "demandes", "performances", "blog", "projets", "campagnes_email", "taches", "messages_internes", "agenda"],
-  technique:  ["dashboard", "producteurs", "vergers", "recoltes", "stocks", "intelligence", "pertes", "taches", "messages_internes", "agenda"],
-  admin:      ALL_MODULES.filter(m => m.group !== "Droits d'écriture").map(m => m.key),
+  commercial: ["dashboard", "marketplace", "commandes", "precommandes", "demandes", "logistique", "messages", "clients", "performances", "taches", "messages_internes", "agenda", "producteurs", "producteurs_ecriture"],
+  marketing:  ["dashboard", "tendances", "prix_marche", "messages", "demandes", "performances", "blog", "projets", "campagnes_email", "taches", "messages_internes", "agenda", "producteurs", "producteurs_ecriture"],
+  technique:  ["dashboard", "producteurs", "vergers", "recoltes", "stocks", "intelligence", "pertes", "taches", "messages_internes", "agenda", "producteurs_ecriture", "vergers_ecriture"],
+  admin:      ALL_MODULES.filter(m => m.group !== "Droits d'écriture" && m.key !== "mon_espace").map(m => m.key),
   superadmin: ALL_MODULES.map(m => m.key),
   producteur: ["dashboard", "mon_espace", "taches", "messages_internes", "agenda"],
   acheteur:   ["dashboard", "marketplace", "commandes", "taches", "messages_internes", "agenda"],
@@ -85,6 +85,7 @@ export const useMyPermissions = () => {
 
   const isPrivileged = roles?.some(r => r === "admin" || r === "superadmin" || r === "producteur" || r === "acheteur");
   const isSuperAdmin = roles?.includes("superadmin") ?? false;
+  const isAdmin = roles?.some(r => r === "admin" || r === "superadmin") ?? false;
 
   const { data: permissions } = useQuery({
     queryKey: ["my-permissions", user?.id],
@@ -107,9 +108,9 @@ export const useMyPermissions = () => {
     return perm ? perm.can_access : false;
   };
 
-  // Séparé de hasAccess : seul le superadmin OU permission explicite accordée
+  // superadmin + admin ont les droits d'écriture sur tout ; sinon permission explicite
   const canWrite = (module: string): boolean => {
-    if (isSuperAdmin) return true;
+    if (isAdmin) return true;
     if (!permissions || permissions.length === 0) return false;
     const perm = permissions.find(p => p.module === `${module}_ecriture`);
     return perm ? perm.can_access : false;

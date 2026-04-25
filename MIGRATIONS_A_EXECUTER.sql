@@ -163,17 +163,17 @@ CREATE POLICY "employes_select" ON public.employes
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "employes_insert" ON public.employes
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'employes_ecriture' AND can_access = true)
   );
 CREATE POLICY "employes_update" ON public.employes
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'employes_ecriture' AND can_access = true)
   );
 CREATE POLICY "employes_delete" ON public.employes
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'employes_ecriture' AND can_access = true)
   );
 CREATE INDEX IF NOT EXISTS idx_employes_statut       ON public.employes(statut);
@@ -195,17 +195,17 @@ CREATE POLICY "producteurs_read_all" ON public.producteurs
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "producteurs_write_authorized" ON public.producteurs
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'producteurs_ecriture' AND can_access = true)
   );
 CREATE POLICY "producteurs_update_authorized" ON public.producteurs
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'producteurs_ecriture' AND can_access = true)
   );
 CREATE POLICY "producteurs_delete_authorized" ON public.producteurs
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'producteurs_ecriture' AND can_access = true)
   );
 
@@ -224,16 +224,23 @@ CREATE POLICY "vergers_read_all" ON public.vergers
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "vergers_write_authorized" ON public.vergers
   FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'vergers_ecriture' AND can_access = true)
   );
 CREATE POLICY "vergers_update_authorized" ON public.vergers
   FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'vergers_ecriture' AND can_access = true)
   );
 CREATE POLICY "vergers_delete_authorized" ON public.vergers
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'superadmin')
+    EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('superadmin','admin'))
     OR EXISTS (SELECT 1 FROM public.user_permissions WHERE user_id = auth.uid() AND module = 'vergers_ecriture' AND can_access = true)
   );
+-- ─── 7. Configuration IA Chatbot ───────────────────────────────────────────
+INSERT INTO public.site_config (cle, valeur, type, categorie)
+VALUES 
+  ('chatbot_api_key', '', 'password', 'ia_config'),
+  ('chatbot_provider', 'openai', 'text', 'ia_config'),
+  ('chatbot_model', 'gpt-4o', 'text', 'ia_config')
+ON CONFLICT (cle) DO NOTHING;
