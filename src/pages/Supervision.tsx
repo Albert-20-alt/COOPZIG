@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useSearchParams } from "react-router-dom";
@@ -7,13 +7,16 @@ import {
   ShieldCheck, Clock, Layers, ChevronDown, Bell,
   MonitorCheck, LogIn, LogOut, Timer,
   UserX, UserPlus, Mail, ArrowRight, Trash2,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Brain, ShieldAlert,
+  Eye, EyeOff, Save, CheckCircle2
 } from "lucide-react";
 import {
   useActivityLogs, useActiveUsers, useUserSessions,
   useAdminNotifications, ActivityLogEntry, UserSession,
-  useClearActivityLogs
+  useClearActivityLogs, useLogAction
 } from "@/hooks/useActivityLog";
+import { useSiteConfig, useUpdateSiteConfig } from "@/hooks/useSiteConfig";
+import { toast } from "sonner";
 import { ALL_MODULES, useMyPermissions } from "@/hooks/usePermissions";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -205,12 +208,14 @@ const SessionRow = ({ session }: { session: UserSession }) => {
 const Supervision = () => {
   const [searchParams] = useSearchParams();
   const preUser = searchParams.get("user") || "";
-  const [activeTab, setActiveTab] = useState<"logs" | "sessions" | "notifications">("logs");
+  const [activeTab, setActiveTab] = useState<"logs" | "sessions" | "notifications" | "ia">("logs");
 
   const [filters, setFilters] = useState({
     userId: preUser, module: "all", action: "all", dateFrom: "", dateTo: "",
   });
-  const [applied, setApplied] = useState({ ...filters, userId: preUser });
+  const [applied, setApplied] = useState({ 
+    userId: preUser, module: "all", action: "all", dateFrom: "", dateTo: "",
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [sessionPage, setSessionPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
@@ -343,6 +348,20 @@ const Supervision = () => {
               {label}
             </button>
           ))}
+          
+          {isSuperAdmin && (
+            <button
+              onClick={() => setActiveTab("ia")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "ia"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Brain size={14} />
+              Intelligence Artificielle
+            </button>
+          )}
         </div>
 
         {/* ── Activity Logs Tab ── */}
@@ -724,8 +743,171 @@ const Supervision = () => {
             </div>
           </div>
         )}
+
+        {/* ── AI Intelligence Tab ── */}
+        {activeTab === "ia" && isSuperAdmin && (
+          <div className="space-y-6 max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-gradient-to-br from-[#0B1910] to-[#1A2E1C] rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] -mr-48 -mt-48" />
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-2xl">
+                  <Brain size={48} className="text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black tracking-tight mb-2">Configuration IA Chatbot</h2>
+                  <p className="text-emerald-100/70 text-lg font-medium leading-relaxed">
+                    Personnalisez l'intelligence de votre plateforme. Connectez un moteur IA pour offrir des réponses dynamiques et pertinentes à vos clients et producteurs.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <IAConfigForm />
+          </div>
+        )}
       </div>
     </DashboardLayout>
+  );
+};
+
+const IAConfigForm = () => {
+  const { data: configs, isLoading } = useSiteConfig();
+  const updateConfig = useUpdateSiteConfig();
+  const logAction = useLogAction();
+  const [showKey, setShowKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getVal = (cle: string) => configs?.find(c => c.cle === cle)?.valeur || "";
+
+  const [formData, setFormData] = useState({
+    apiKey: "",
+    provider: "openai",
+    model: "gpt-4o"
+  });
+
+  // Sync state when configs are loaded
+  useEffect(() => {
+    if (configs) {
+      setFormData({
+        apiKey: getVal("chatbot_api_key"),
+        provider: getVal("chatbot_provider") || "openai",
+        model: getVal("chatbot_model") || "gpt-4o"
+      });
+    }
+  }, [configs]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await updateConfig.mutateAsync({ cle: "chatbot_api_key", valeur: formData.apiKey });
+      await updateConfig.mutateAsync({ cle: "chatbot_provider", valeur: formData.provider });
+      await updateConfig.mutateAsync({ cle: "chatbot_model", valeur: formData.model });
+
+      logAction.mutate({
+        action: "update",
+        module: "intelligence",
+        label: `Mise à jour de la configuration IA (Provider: ${formData.provider})`,
+      });
+
+      toast.success("Configuration IA enregistrée avec succès");
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) return <div className="p-12 text-center text-gray-400">Chargement des paramètres...</div>;
+
+  return (
+    <div className="bg-white dark:bg-white/[0.02] rounded-[2.5rem] border border-gray-100 dark:border-white/[0.05] shadow-xl p-8">
+      <form onSubmit={handleSave} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Provider */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Fournisseur IA (Provider)</label>
+            <select
+              value={formData.provider}
+              onChange={(e) => {
+                const p = e.target.value;
+                const defaults: Record<string, string> = {
+                  openai: "gpt-4o",
+                  groq: "llama3-70b-8192",
+                  mistral: "mistral-large-latest",
+                  anthropic: "claude-3-5-sonnet-20241022",
+                };
+                setFormData(f => ({ ...f, provider: p, model: defaults[p] || "" }));
+              }}
+              className="w-full h-12 px-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 font-bold text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none cursor-pointer"
+            >
+              <option value="openai">OpenAI (GPT-4o, GPT-3.5)</option>
+              <option value="mistral">Mistral AI (Large, Small)</option>
+              <option value="groq">Groq (Llama 3, Mixtral)</option>
+              <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+            </select>
+          </div>
+
+          {/* Model */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">ID du Modèle</label>
+            <input
+              type="text"
+              value={formData.model}
+              onChange={(e) => setFormData(f => ({ ...f, model: e.target.value }))}
+              placeholder="ex: llama3-70b-8192"
+              className="w-full h-12 px-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 font-bold text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+            />
+            <p className="text-[10px] text-gray-400 mt-1.5 ml-1">
+              {formData.provider === "groq" && "Modèles Groq : llama3-70b-8192 · llama3-8b-8192 · mixtral-8x7b-32768"}
+              {formData.provider === "openai" && "Modèles OpenAI : gpt-4o · gpt-4o-mini · gpt-3.5-turbo"}
+              {formData.provider === "mistral" && "Modèles Mistral : mistral-large-latest · mistral-small-latest"}
+              {formData.provider === "anthropic" && "Modèles Anthropic : claude-3-5-sonnet-20241022 · claude-3-haiku-20240307"}
+            </p>
+          </div>
+        </div>
+
+        {/* API Key */}
+        <div className="space-y-3">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Clé API (Secret Key)</label>
+          <div className="relative group">
+            <input 
+              type={showKey ? "text" : "password"}
+              value={formData.apiKey}
+              onChange={(e) => setFormData(f => ({ ...f, apiKey: e.target.value }))}
+              placeholder="sk-..."
+              className="w-full h-14 px-5 pr-12 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 font-mono text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+            />
+            <button 
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-500 transition-colors"
+            >
+              {showKey ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400 italic ml-1 flex items-center gap-1.5">
+            <ShieldAlert size={12} className="text-amber-500" />
+            Votre clé est stockée de manière sécurisée et ne sera utilisée que pour le Chatbot.
+          </p>
+        </div>
+
+        <div className="pt-6 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold text-gray-400">
+            <CheckCircle2 size={16} className="text-emerald-500" />
+            Statut : {formData.apiKey ? "Configuré" : "Non configuré"}
+          </div>
+          <button 
+            type="submit"
+            disabled={isSaving}
+            className="flex items-center gap-2 px-10 py-3.5 bg-[#1A2E1C] text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-900/10 disabled:opacity-50"
+          >
+            {isSaving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
+            Enregistrer la configuration
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

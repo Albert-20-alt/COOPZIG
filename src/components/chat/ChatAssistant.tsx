@@ -162,7 +162,8 @@ export const ChatAssistant = () => {
     // Utilise le modèle natif du provider si : modèle vide, modèle = nom d'un provider,
     // ou modèle openai-only (gpt-4o) envoyé à un autre provider.
     const PROVIDER_NAMES = new Set(Object.keys(ENDPOINTS));
-    const isInvalidModel = !model || PROVIDER_NAMES.has(model) || (model === "gpt-4o" && provider !== "openai");
+    const modelLower = (model || "").toLowerCase();
+    const isInvalidModel = !model || PROVIDER_NAMES.has(modelLower) || (modelLower === "gpt-4o" && provider !== "openai");
     const resolvedModel = isInvalidModel ? (DEFAULT_MODELS[provider] || "llama3-70b-8192") : model;
 
     try {
