@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useActivityLog } from "@/hooks/useActivityLog";
+import { useLogAction } from "@/hooks/useActivityLog";
 
 export default function Profil() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const logActivity = useActivityLog();
+  const logActivity = useLogAction();
 
   const [form, setForm] = useState({
     full_name: "",

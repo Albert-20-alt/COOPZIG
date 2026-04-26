@@ -510,7 +510,7 @@ const Producteurs = () => {
             <Loader2 className="animate-spin text-emerald-600" size={32} />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {producteursData.map((p) => (
               <div
                 key={p.id}
@@ -518,68 +518,67 @@ const Producteurs = () => {
                 className="bg-white dark:bg-[#131d2e] border border-gray-100 dark:border-[#1e2d45] rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative group flex flex-col"
               >
                 <div className="flex justify-between items-start mb-4">
-                  <div className="h-12 w-12 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-700 font-bold text-xl">
+                  <div className="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-700 font-bold text-lg">
                     {p.nom.substring(0, 2).toUpperCase()}
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     {p.numero_membre && (
-                      <span className="text-[10px] font-bold text-gray-400 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-md">{p.numero_membre}</span>
+                      <span className="text-[9px] font-bold text-gray-400 bg-gray-50 border border-gray-200 px-1 py-0.5 rounded-md">{p.numero_membre}</span>
                     )}
-                    <Badge className={cn("border-none rounded-full px-2 py-0.5 text-xs font-semibold", p.statut_actif !== false ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500")}>
+                    <Badge className={cn("border-none rounded-full px-1.5 py-0 text-[10px] font-bold", p.statut_actif !== false ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500")}>
                       {p.statut_actif !== false ? "Actif" : "Inactif"}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <h3 className="text-base font-bold text-gray-900 line-clamp-1">{p.nom}</h3>
-                  {p.genre && <p className="text-[10px] text-gray-400 font-medium mt-0.5">{p.genre}</p>}
-                  <div className="flex items-center gap-1.5 text-gray-500 text-sm mt-1">
-                    <MapPin size={12} />{p.localisation || "Non renseigné"}
+                  <h3 className="text-sm font-bold text-gray-900 line-clamp-1 mb-0.5">{p.nom}</h3>
+                  <div className="flex items-center gap-1 text-gray-400 text-[11px] font-medium">
+                    <MapPin size={10} />{p.localisation || "Non renseigné"}
                   </div>
                 </div>
 
                 {/* Contact quick info */}
                 {(p.telephone || p.email) && (
-                  <div className="flex flex-col gap-1 mb-3">
+                  <div className="flex flex-col gap-0.5 mb-3">
                     {p.telephone && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <Phone size={11} />{p.telephone}
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400 font-medium">
+                        <Phone size={10} />{p.telephone}
                       </div>
                     )}
                     {p.email && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 truncate">
-                        <Mail size={11} />{p.email}
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400 font-medium truncate">
+                        <Mail size={10} />{p.email}
                       </div>
                     )}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                    <p className="text-[10px] font-medium text-gray-400 mb-0.5">Superficie</p>
-                    <p className="text-sm font-bold text-gray-900">{p.superficie || 0} <span className="text-[10px] font-normal text-gray-400">Ha</span></p>
+                  <div className="p-2 bg-gray-50 rounded-lg border border-gray-100">
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight mb-0.5">Surface</p>
+                    <p className="text-xs font-black text-gray-900">{p.superficie || 0} <span className="text-[9px] font-medium text-gray-400">Ha</span></p>
                   </div>
-                  <div className="p-2.5 bg-emerald-50 rounded-lg border border-emerald-100 text-right">
-                    <p className="text-[10px] font-medium text-emerald-600/70 mb-0.5">Vergers</p>
-                    <p className="text-sm font-bold text-emerald-700">{p.vergers?.length || 0}</p>
+                  <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100 text-right">
+                    <p className="text-[9px] font-bold text-emerald-600/70 mb-0.5">Vergers</p>
+                    <p className="text-xs font-black text-emerald-700">{p.vergers?.length || 0}</p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
-                  {p.cultures?.slice(0, 3).map(c => (
-                    <Badge key={c} variant="outline" className={cn("rounded-md px-2 py-0.5 font-medium text-xs", cultureColors[c] || "bg-gray-50 text-gray-700 border-gray-200")}>
+                <div className="flex flex-wrap gap-1 mt-auto">
+                  {p.cultures?.slice(0, 2).map(c => (
+                    <Badge key={c} variant="outline" className={cn("rounded-md px-1.5 py-0 font-bold text-[9px] uppercase tracking-tighter", cultureColors[c] || "bg-gray-50 text-gray-600 border-gray-200")}>
                       {c}
                     </Badge>
                   ))}
-                  {p.cultures && p.cultures.length > 3 && (
-                    <Badge variant="outline" className="rounded-md bg-gray-50 text-gray-500 border-gray-200 text-xs px-2 py-0.5">
-                      +{p.cultures.length - 3}
+                  {p.cultures && p.cultures.length > 2 && (
+                    <Badge variant="outline" className="rounded-md bg-gray-50 text-gray-400 border-gray-200 text-[9px] px-1 py-0 font-bold">
+                      +{p.cultures.length - 2}
                     </Badge>
                   )}
                   {p.certification && (
-                    <Badge variant="outline" className="rounded-md bg-amber-50 text-amber-700 border-amber-200 font-medium px-2 py-0.5 text-xs">
-                      <Star size={9} className="mr-1 fill-amber-500 text-amber-500" />{p.certification}
+                    <Badge variant="outline" className="rounded-md bg-amber-50 text-amber-700 border-amber-200 font-bold px-1.5 py-0 text-[9px] uppercase tracking-tighter">
+                      <Star size={8} className="mr-1 fill-amber-500 text-amber-500" />{p.certification}
                     </Badge>
                   )}
                 </div>

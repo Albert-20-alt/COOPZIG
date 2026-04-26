@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useActivityLog } from "@/hooks/useActivityLog";
+import { useLogAction } from "@/hooks/useActivityLog";
 import {
   Mail, Clock, CheckCircle2, Archive, ArchiveRestore,
   Reply, Trash2, Search, Send, Loader2, Bell, Download,
@@ -247,7 +247,7 @@ const NewsletterTab = () => {
 // ─── Main Component ────────────────────────────────────────────────────────────
 const AdminMessages = () => {
   const qc = useQueryClient();
-  const logActivity = useActivityLog();
+  const logActivity = useLogAction();
   const [tab, setTab] = useState<"messages" | "newsletter">("messages");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Toutes");

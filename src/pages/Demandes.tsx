@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useActivityLog } from "@/hooks/useActivityLog";
+import { useLogAction } from "@/hooks/useActivityLog";
 import EntityNotes from "@/components/EntityNotes";
 import {
   Building2, Phone, Mail, MapPin, Package,
@@ -55,7 +55,7 @@ const StatCard = ({ title, value, icon: Icon, variant = "default" }: any) => (
 
 const Demandes = () => {
   const queryClient = useQueryClient();
-  const logActivity = useActivityLog();
+  const logActivity = useLogAction();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("Toutes");
   const [selectedDemande, setSelectedDemande] = useState<Demande | null>(null);

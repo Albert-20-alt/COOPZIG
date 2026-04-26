@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useActivityLog } from "@/hooks/useActivityLog";
+import { useLogAction } from "@/hooks/useActivityLog";
 import EntityNotes from "@/components/EntityNotes";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -65,7 +65,7 @@ const StatCard = ({ title, value, icon: Icon, description, trend, variant = "def
 const Commandes = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const logActivity = useActivityLog();
+  const logActivity = useLogAction();
   const [selectedCmd, setSelectedCmd] = useState<any>(null);
   const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -107,16 +107,22 @@ const Commandes = () => {
   });
 
   const { data: listData, isLoading } = useQuery({
-    queryKey: ["commandes-list", page, search],
+    queryKey: ["commandes-list", page, search, filterStatut],
     queryFn: async () => {
       let q = supabase
         .from("commandes")
         .select(`*, produits(photo_url, zone_production)`, { count: "exact" })
         .eq("est_precommande", false)
         .order("created_at", { ascending: false });
+
       if (search) {
         q = q.or(`produit_nom.ilike.%${search}%,id.ilike.%${search}%`);
       }
+
+      if (filterStatut !== "all") {
+        q = q.eq("statut", filterStatut);
+      }
+
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       const { data, count, error } = await q.range(from, to);

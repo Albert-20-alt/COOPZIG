@@ -392,7 +392,7 @@ const Vergers = () => {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {filtered.map((v) => {
               const cfg = etatConfig[v.etat] || etatConfig["Repos"];
               const prod = (v.superficie || 0) * (v.estimation_rendement || 0);
@@ -400,42 +400,42 @@ const Vergers = () => {
                 <div
                   key={v.id}
                   onClick={() => { setSelectedDetail(v); setDetailOpen(true); }}
-                  className="bg-white dark:bg-[#131d2e] border border-gray-100 dark:border-[#1e2d45] rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer relative group"
+                  className="bg-white dark:bg-[#131d2e] border border-gray-100 dark:border-[#1e2d45] rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer relative group"
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <div className="p-2.5 rounded-lg bg-gray-50 text-gray-700 border border-gray-100">
-                      <Sprout size={20} />
+                    <div className="p-2 rounded-lg bg-gray-50 text-gray-700 border border-gray-100">
+                      <Sprout size={16} />
                     </div>
-                    <Badge className={cn("rounded-md px-2 py-0.5 text-xs font-semibold border flex gap-1 items-center", cfg.bg, cfg.color)}>
+                    <Badge className={cn("rounded-md px-2 py-0 text-[10px] font-bold border flex gap-1 items-center", cfg.bg, cfg.color)}>
                       {cfg.icon} {v.etat}
                     </Badge>
                   </div>
 
-                  <div className="mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{v.nom}</h3>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{v.producteurs?.nom || "Indépendant"}</p>
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-0.5 truncate">{v.nom}</h3>
+                    <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">{v.producteurs?.nom || "Indépendant"}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                     <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/5">
-                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Superficie</p>
-                       <p className="text-base font-bold text-gray-900 dark:text-gray-100">{v.superficie || 0} <span className="text-xs font-normal">Ha</span></p>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                     <div className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/5">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight mb-0.5">Surface</p>
+                       <p className="text-sm font-black text-gray-900 dark:text-gray-100">{v.superficie || 0} <span className="text-[10px] font-medium text-gray-400">Ha</span></p>
                      </div>
-                     <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/5">
-                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Rendement</p>
-                       <p className="text-base font-bold text-gray-900 dark:text-gray-100">{v.estimation_rendement || 0} <span className="text-xs font-normal">T/Ha</span></p>
+                     <div className="p-2 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/5">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight mb-0.5">Rendmt</p>
+                       <p className="text-sm font-black text-gray-900 dark:text-gray-100">{v.estimation_rendement || 0} <span className="text-[10px] font-medium text-gray-400">T/Ha</span></p>
                      </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mb-4">
-                     <Badge variant="outline" className="rounded-md bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 font-medium px-2 py-0.5 text-xs">🌿 {v.culture}</Badge>
-                     {v.zone && <Badge variant="outline" className="rounded-md bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 font-medium px-2 py-0.5 text-xs">📍 {v.zone}</Badge>}
+                  <div className="flex flex-wrap gap-1 mb-3">
+                     <Badge variant="outline" className="rounded-md bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold px-1.5 py-0 text-[9px] uppercase tracking-tighter">🌿 {v.culture}</Badge>
+                     {v.zone && <Badge variant="outline" className="rounded-md bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-bold px-1.5 py-0 text-[9px] uppercase tracking-tighter">📍 {v.zone}</Badge>}
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-white/5">
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/5">
                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Flux de récolte estimé</p>
-                        <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{prod.toFixed(0)} <span className="text-sm font-medium">T</span></p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Flux estimé</p>
+                        <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">{prod.toFixed(0)} <span className="text-[10px] font-bold">T</span></p>
                      </div>
                      {canEdit && (
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">

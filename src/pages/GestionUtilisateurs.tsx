@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { ALL_MODULES, ROLE_DEFAULT_PERMISSIONS, useSaveUserPermissions, useUserPermissions } from "@/hooks/usePermissions";
-import { useActivityLog } from "@/hooks/useActivityLog";
+import { useLogAction } from "@/hooks/useActivityLog";
 import { Link } from "react-router-dom";
 import UserProfileSheet from "@/components/UserProfileSheet";
 
@@ -350,7 +350,7 @@ const GestionUtilisateurs = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const logActivity = useActivityLog();
+  const logActivity = useLogAction();
 
   const deleteUser = useMutation({
     mutationFn: async (params: { userId: string; userEmail?: string }) => {

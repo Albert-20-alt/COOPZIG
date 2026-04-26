@@ -1,3 +1,6 @@
+import { useState, useEffect, useRef } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Save, Loader2, Plus, Trash2, ExternalLink, ImagePlus, X, Search, ChevronUp, ChevronDown, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

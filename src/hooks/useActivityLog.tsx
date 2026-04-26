@@ -74,7 +74,7 @@ async function createAdminNotification(params: {
 }
 
 // ─── Hook: log an activity ────────────────────────────────────────────────────
-export const useActivityLog = () => {
+export const useLogAction = () => {
   const { user } = useAuth();
 
   return useMutation({
