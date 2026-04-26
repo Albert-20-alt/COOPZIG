@@ -96,7 +96,8 @@ CREATE POLICY "msg_select" ON public.messages_internes
 CREATE POLICY "msg_insert" ON public.messages_internes
   FOR INSERT WITH CHECK (auth.uid() = from_user_id);
 CREATE POLICY "msg_update" ON public.messages_internes
-  FOR UPDATE USING (auth.uid() = to_user_id OR auth.uid() = from_user_id);
+  FOR UPDATE USING (auth.uid() = to_user_id OR auth.uid() = from_user_id)
+  WITH CHECK (auth.uid() = to_user_id OR auth.uid() = from_user_id);
 CREATE POLICY "msg_delete" ON public.messages_internes
   FOR DELETE USING (auth.uid() = from_user_id OR auth.uid() = to_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_to_user   ON public.messages_internes(to_user_id);

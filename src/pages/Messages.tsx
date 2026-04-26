@@ -108,13 +108,18 @@ export default function Messages() {
 
   const deleteMsg = useMutation({
     mutationFn: async ({ id, field }: { id: string; field: string }) => {
-      await supabase.from("messages_internes" as any).update({ [field]: true }).eq("id", id);
+      const { error } = await supabase
+        .from("messages_internes" as any)
+        .update({ [field]: true })
+        .eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["messages-internes"] });
       setSelected(null);
       toast.success("Message supprimé");
     },
+    onError: (e: any) => toast.error("Erreur : " + e.message),
   });
 
   const sendMsg = useMutation({
