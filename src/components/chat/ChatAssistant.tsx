@@ -159,11 +159,11 @@ export const ChatAssistant = () => {
     };
 
     const endpoint = ENDPOINTS[provider] || ENDPOINTS.openai;
-    // Si le modèle configuré est le défaut OpenAI mais le provider est différent,
-    // on utilise le modèle natif du provider pour éviter une erreur 404.
-    const resolvedModel = (model === "gpt-4o" && provider !== "openai")
-      ? DEFAULT_MODELS[provider]
-      : (model || DEFAULT_MODELS[provider] || "gpt-4o");
+    // Utilise le modèle natif du provider si : modèle vide, modèle = nom d'un provider,
+    // ou modèle openai-only (gpt-4o) envoyé à un autre provider.
+    const PROVIDER_NAMES = new Set(Object.keys(ENDPOINTS));
+    const isInvalidModel = !model || PROVIDER_NAMES.has(model) || (model === "gpt-4o" && provider !== "openai");
+    const resolvedModel = isInvalidModel ? (DEFAULT_MODELS[provider] || "llama3-70b-8192") : model;
 
     try {
       const response = await fetch(endpoint, {
