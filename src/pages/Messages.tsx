@@ -159,7 +159,7 @@ export default function Messages() {
 
   return (
     <DashboardLayout title="Messagerie interne">
-      <div className="max-w-6xl mx-auto px-4 py-6 h-[calc(100vh-48px)] flex flex-col">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col" style={{ height: "calc(100vh - 72px)" }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -178,7 +178,7 @@ export default function Messages() {
           </button>
         </div>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 min-h-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 overflow-hidden">
           {/* Left panel: list */}
           <div className="flex flex-col bg-white dark:bg-[#0d1525] rounded-2xl border border-gray-100 dark:border-[#1e2d45] overflow-hidden">
             {/* Tabs */}
@@ -234,31 +234,47 @@ export default function Messages() {
                   const isUnread = !msg.is_read && msg.to_user_id === user?.id;
                   const isActive = selected?.id === msg.id;
                   return (
-                    <button
+                    <div
                       key={msg.id}
-                      onClick={() => openMessage(msg)}
-                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors ${
+                      className={`group relative flex items-stretch hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors ${
                         isActive ? "bg-emerald-50 dark:bg-emerald-900/10" : ""
                       }`}
                     >
-                      <div className="flex items-start gap-2.5">
-                        <Avatar name={msg.from_name ?? "?"} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <p className={`text-xs truncate ${isUnread ? "font-bold text-gray-900 dark:text-gray-100" : "font-medium text-gray-700 dark:text-gray-300"}`}>
-                              {tab === "inbox" ? (msg.from_name ?? "Inconnu") : "À: " + (profiles.find(p => p.user_id === msg.to_user_id) ? profileName(profiles.find(p => p.user_id === msg.to_user_id)!) : msg.to_user_id)}
+                      <button
+                        onClick={() => openMessage(msg)}
+                        className="flex-1 text-left px-4 py-3"
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <Avatar name={msg.from_name ?? "?"} size="sm" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className={`text-xs truncate ${isUnread ? "font-bold text-gray-900 dark:text-gray-100" : "font-medium text-gray-700 dark:text-gray-300"}`}>
+                                {tab === "inbox" ? (msg.from_name ?? "Inconnu") : "À: " + (profiles.find(p => p.user_id === msg.to_user_id) ? profileName(profiles.find(p => p.user_id === msg.to_user_id)!) : msg.to_user_id)}
+                              </p>
+                              <p className="text-[10px] text-gray-400 shrink-0">{timeAgo(msg.created_at)}</p>
+                            </div>
+                            <p className={`text-xs truncate ${isUnread ? "font-semibold text-gray-800 dark:text-gray-200" : "text-gray-600 dark:text-gray-400"}`}>
+                              {msg.subject}
                             </p>
-                            <p className="text-[10px] text-gray-400 shrink-0">{timeAgo(msg.created_at)}</p>
+                            <p className="text-[11px] text-gray-400 truncate mt-0.5">{msg.body}</p>
                           </div>
-                          <p className={`text-xs truncate ${isUnread ? "font-semibold text-gray-800 dark:text-gray-200" : "text-gray-600 dark:text-gray-400"}`}>
-                            {msg.subject}
-                          </p>
-                          <p className="text-[11px] text-gray-400 truncate mt-0.5">{msg.body}</p>
+                          {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />}
                         </div>
-                        {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />}
-                        <ChevronRight size={12} className="text-gray-300 mt-1 shrink-0" />
-                      </div>
-                    </button>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteMsg.mutate({
+                            id: msg.id,
+                            field: tab === "inbox" ? "deleted_by_recipient" : "deleted_by_sender",
+                          });
+                        }}
+                        className="px-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center text-gray-300 hover:text-red-500"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   );
                 })
               )}
