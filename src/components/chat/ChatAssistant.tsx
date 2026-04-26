@@ -154,7 +154,7 @@ export const ChatAssistant = () => {
     };
     const DEFAULT_MODELS: Record<string, string> = {
       openai:  "gpt-4o",
-      groq:    "llama3-70b-8192",
+      groq:    "llama-3.3-70b-versatile",
       mistral: "mistral-large-latest",
     };
 
@@ -164,7 +164,7 @@ export const ChatAssistant = () => {
     const PROVIDER_NAMES = new Set(Object.keys(ENDPOINTS));
     const modelLower = (model || "").toLowerCase();
     const isInvalidModel = !model || PROVIDER_NAMES.has(modelLower) || (modelLower === "gpt-4o" && provider !== "openai");
-    const resolvedModel = isInvalidModel ? (DEFAULT_MODELS[provider] || "llama3-70b-8192") : model;
+    const resolvedModel = isInvalidModel ? (DEFAULT_MODELS[provider] || "llama-3.3-70b-versatile") : model;
 
     try {
       const response = await fetch(endpoint, {

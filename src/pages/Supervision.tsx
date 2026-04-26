@@ -833,7 +833,7 @@ const IAConfigForm = () => {
                 const p = e.target.value;
                 const defaults: Record<string, string> = {
                   openai: "gpt-4o",
-                  groq: "llama3-70b-8192",
+                  groq: "llama-3.3-70b-versatile",
                   mistral: "mistral-large-latest",
                   anthropic: "claude-3-5-sonnet-20241022",
                 };
@@ -855,11 +855,11 @@ const IAConfigForm = () => {
               type="text"
               value={formData.model}
               onChange={(e) => setFormData(f => ({ ...f, model: e.target.value }))}
-              placeholder="ex: llama3-70b-8192"
+              placeholder="ex: llama-3.3-70b-versatile"
               className="w-full h-12 px-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 font-bold text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
             />
             <p className="text-[10px] text-gray-400 mt-1.5 ml-1">
-              {formData.provider === "groq" && "Modèles Groq : llama3-70b-8192 · llama3-8b-8192 · mixtral-8x7b-32768"}
+              {formData.provider === "groq" && "Modèles Groq : llama-3.3-70b-versatile · llama-3.1-8b-instant · mixtral-8x7b-32768"}
               {formData.provider === "openai" && "Modèles OpenAI : gpt-4o · gpt-4o-mini · gpt-3.5-turbo"}
               {formData.provider === "mistral" && "Modèles Mistral : mistral-large-latest · mistral-small-latest"}
               {formData.provider === "anthropic" && "Modèles Anthropic : claude-3-5-sonnet-20241022 · claude-3-haiku-20240307"}
