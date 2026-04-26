@@ -147,10 +147,23 @@ export const ChatAssistant = () => {
       { role: "user", content: prompt }
     ];
 
-    let endpoint = "";
-    if (provider === "openai") endpoint = "https://api.openai.com/v1/chat/completions";
-    else if (provider === "groq") endpoint = "https://api.groq.com/openai/v1/chat/completions";
-    else endpoint = "https://api.openai.com/v1/chat/completions";
+    const ENDPOINTS: Record<string, string> = {
+      openai:  "https://api.openai.com/v1/chat/completions",
+      groq:    "https://api.groq.com/openai/v1/chat/completions",
+      mistral: "https://api.mistral.ai/v1/chat/completions",
+    };
+    const DEFAULT_MODELS: Record<string, string> = {
+      openai:  "gpt-4o",
+      groq:    "llama3-70b-8192",
+      mistral: "mistral-large-latest",
+    };
+
+    const endpoint = ENDPOINTS[provider] || ENDPOINTS.openai;
+    // Si le modèle configuré est le défaut OpenAI mais le provider est différent,
+    // on utilise le modèle natif du provider pour éviter une erreur 404.
+    const resolvedModel = (model === "gpt-4o" && provider !== "openai")
+      ? DEFAULT_MODELS[provider]
+      : (model || DEFAULT_MODELS[provider] || "gpt-4o");
 
     try {
       const response = await fetch(endpoint, {
@@ -160,21 +173,21 @@ export const ChatAssistant = () => {
           "Authorization": `Bearer ${key}`
         },
         body: JSON.stringify({
-          model: model || (provider === "groq" ? "llama3-70b-8192" : "gpt-4o"),
+          model: resolvedModel,
           messages: messagesForAI
         })
       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || "Erreur de l'IA");
+        throw new Error(err.error?.message || `Erreur ${response.status}`);
       }
 
       const data = await response.json();
       return data.choices[0].message.content;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Fetch Error:", err);
-      return "Désolé, j'ai une petite difficulté technique pour me connecter à mon cerveau IA. Pouvez-vous vérifier la configuration de la clé API dans les paramètres ?";
+      return `Désolé, une erreur est survenue : ${err?.message || "connexion impossible"}. Vérifiez la clé API et le fournisseur dans les paramètres IA.`;
     }
   };
 
