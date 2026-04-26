@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 type Message = {
   id: string;
@@ -80,39 +81,101 @@ export const ChatAssistant = () => {
   const processResponse = async (query: string) => {
     setIsTyping(true);
     
-    // Simulation de délai de réflexion
-    setTimeout(async () => {
-      let response: Message = {
+    try {
+      const { data: configs } = await supabase.from("site_config").select("*").eq("categorie", "ia_config");
+      const apiKey = configs?.find(c => c.cle === "chatbot_api_key")?.valeur;
+      const provider = configs?.find(c => c.cle === "chatbot_provider")?.valeur || "openai";
+      const model = configs?.find(c => c.cle === "chatbot_model")?.valeur || "gpt-4o";
+
+      if (!apiKey) {
+        // Fallback to static logic if no API key
+        setTimeout(() => {
+          let response: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "bot",
+            content: "",
+            timestamp: new Date()
+          };
+
+          if (query.toLowerCase().includes("prix")) {
+            response.content = "Vous pouvez consulter les cotations en temps réel sur notre observatoire des prix. Nous suivons les produits comme la Mangue, l'Anacarde et le Riz.";
+          } else if (query.toLowerCase().includes("produit")) {
+            response.content = "La coopérative propose une large gamme de produits certifiés : Mangues Kent, Noix d'anacarde, Riz local et bien d'autres. Voulez-vous voir le catalogue ?";
+            response.type = "options";
+            response.options = [{ label: "📖 Voir le catalogue", value: "view_catalog" }];
+          } else if (query.toLowerCase().includes("contact")) {
+            response.content = "Vous pouvez nous envoyer un message directement ici. Quel est l'objet de votre demande ?";
+            response.type = "contact";
+          } else {
+            response.content = "Je suis l'assistant CoopZig. Posez-moi vos questions sur nos produits, nos prix ou notre coopérative.";
+          }
+
+          setMessages(prev => [...prev, response]);
+          setIsTyping(false);
+        }, 1000);
+        return;
+      }
+
+      // Real AI Call
+      const aiResponse = await callAI(query, messages, apiKey, provider, model);
+      
+      const response: Message = {
         id: (Date.now() + 1).toString(),
         role: "bot",
-        content: "",
+        content: aiResponse,
         timestamp: new Date()
       };
 
-      if (query.toLowerCase().includes("prix")) {
-        response.content = "Vous pouvez consulter les cotations en temps réel sur notre observatoire des prix. Nous suivons les produits comme la Mangue, l'Anacarde et le Riz.";
-        response.type = "text";
-      } else if (query.toLowerCase().includes("produit")) {
-        response.content = "La coopérative propose une large gamme de produits certifiés : Mangues Kent, Noix d'anacarde, Riz local et bien d'autres. Voulez-vous voir le catalogue ?";
-        response.type = "options";
-        response.options = [{ label: "📖 Voir le catalogue", value: "view_catalog" }];
-      } else if (query.toLowerCase().includes("contact") || query === "contact") {
-        response.content = "Vous pouvez nous envoyer un message directement ici. Quel est l'objet de votre demande ?";
-        response.type = "contact";
-      } else if (query.toLowerCase().includes("about") || query === "about") {
-        response.content = "CoopZig est une coopérative régionale basée à Ziguinchor, engagée pour l'excellence de l'agriculture en Casamance et le juste prix pour nos producteurs.";
-      } else {
-        response.content = "Je ne suis pas sûr de comprendre, mais je peux vous mettre en relation avec un conseiller ou vous guider vers nos services principaux.";
-        response.type = "options";
-        response.options = [
-          { label: "📞 Parler à un conseiller", value: "contact" },
-          { label: "🏠 Retour au début", value: "start" }
-        ];
+      setMessages(prev => [...prev, response]);
+    } catch (error) {
+      console.error("Chatbot AI Error:", error);
+      toast.error("Erreur de connexion avec l'IA");
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const callAI = async (prompt: string, history: Message[], key: string, provider: string, model: string): Promise<string> => {
+    const systemPrompt = "Tu es l'assistant virtuel de CoopZig Ziguinchor-Casamance, une coopérative agricole au Sénégal. Réponds en français, de manière concise et utile sur les sujets agricoles, commerciaux et coopératifs.";
+
+    const messagesForAI = [
+      { role: "system", content: systemPrompt },
+      ...history.slice(-5).map(m => ({
+        role: m.role === "bot" ? "assistant" : "user",
+        content: m.content
+      })),
+      { role: "user", content: prompt }
+    ];
+
+    let endpoint = "";
+    if (provider === "openai") endpoint = "https://api.openai.com/v1/chat/completions";
+    else if (provider === "groq") endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    else endpoint = "https://api.openai.com/v1/chat/completions";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: model || (provider === "groq" ? "llama3-70b-8192" : "gpt-4o"),
+          messages: messagesForAI
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || "Erreur de l'IA");
       }
 
-      setMessages(prev => [...prev, response]);
-      setIsTyping(false);
-    }, 1500);
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      return "Désolé, j'ai une petite difficulté technique pour me connecter à mon cerveau IA. Pouvez-vous vérifier la configuration de la clé API dans les paramètres ?";
+    }
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
